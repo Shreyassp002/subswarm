@@ -1,6 +1,20 @@
 export type ProviderId = 'network' | 'saygm' | 'desearch' | 'chronoseek' | 'chutes' | '404gen' | 'attelier' | 'everyframe' | 'hippius' | 'ridges';
-export type TaskKind = 'network-scan' | 'text' | 'search' | 'video-search';
+export type TaskKind = 'network-scan' | 'text' | 'search' | 'video-search' | '3d';
 export type JobStatus = 'queued' | 'running' | 'completed' | 'failed';
+
+export interface ProviderInputField {
+  key: 'prompt' | 'videoUrl' | 'netuid' | 'maxTokens' | 'topK' | 'start' | 'model' | 'inputImageUrl';
+  type: 'textarea' | 'url' | 'number' | 'select';
+  label: string;
+  description?: string;
+  required: boolean;
+  defaultValue?: string | number;
+  placeholder?: string;
+  min?: number;
+  max?: number;
+  maxLength?: number;
+  options?: { label: string; value: string | number }[];
+}
 
 export interface Provider {
   id: ProviderId;
@@ -13,6 +27,11 @@ export interface Provider {
   taskKind: TaskKind | null;
   attribution: 'none' | 'registered-participants' | 'query-uids';
   website: string;
+  docsUrl?: string;
+  inputs: ProviderInputField[];
+  inputDescription: string;
+  outputDescription: string;
+  exampleInput?: JobInput;
   reason?: string;
 }
 
@@ -40,11 +59,25 @@ export interface JobInput {
   prompt?: string;
   videoUrl?: string;
   netuid?: number;
+  maxTokens?: number;
+  topK?: number;
+  start?: number;
+  model?: '404-3dgs' | '404-mesh';
+  inputImageUrl?: string;
 }
+
+export type ResultBlock =
+  | { type: 'text'; text: string; model?: string }
+  | { type: 'search-results'; items: { title: string; snippet: string; url: string }[] }
+  | { type: 'video-moments'; sourceUrl: string; items: { start: number; end: number; confidence: number }[] }
+  | { type: 'participants'; snapshot: NetworkSnapshot }
+  | { type: 'files'; items: { title: string; url: string; format: 'spz' | 'glb' }[] };
 
 export interface JobResult {
   title: string;
   text: string;
+  blocks?: ResultBlock[];
+  providerTaskId?: string;
   links?: { title: string; url: string }[];
   snapshot?: NetworkSnapshot;
   attribution?: { kind: 'registered-participants' | 'query-uids'; uids: number[]; note: string };
@@ -59,6 +92,7 @@ export interface Job {
   createdAt: string;
   updatedAt: string;
   result: JobResult | null;
+  providerTaskId?: string;
   error: string | null;
 }
 
@@ -68,7 +102,7 @@ export interface Artifact {
   providerId: ProviderId;
   title: string;
   content: string;
-  type: 'text' | 'network-report' | 'search' | 'video';
+  type: 'text' | 'network-report' | 'search' | 'video' | '3d';
   createdAt: string;
 }
 
@@ -80,3 +114,5 @@ export interface Session {
 export interface ApiError {
   error: { code: string; message: string };
 }
+
+export type { WalletState, PaymentSettings, PaymentQuote, PaymentLedgerEntry } from './payments';

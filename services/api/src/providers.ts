@@ -1,24 +1,13 @@
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
-import type { JobInput, JobResult, Provider } from '@subswarm/shared';
+import type { JobInput, JobResult } from '@subswarm/shared';
 import type { Config } from './config.js';
 import { ApiFailure } from './errors.js';
 import type { NetworkReader } from './network.js';
+import { create404Executor } from './gen404.js';
 
-export function providerCatalog(config: Config, networkAvailable: boolean): Provider[] {
-  return [
-    { id: 'network', name: 'Network Explorer', netuid: 298, network: 'testnet', category: 'Network', description: 'Inspect registered participants on Bittensor testnet without a wallet.', status: networkAvailable ? 'ready' : 'unavailable', taskKind: 'network-scan', attribution: 'registered-participants', website: 'https://www.bittensor.com', reason: networkAvailable ? undefined : 'The read-only chain CLI is not configured on this server.' },
-    { id: 'saygm', name: 'SayGM', netuid: 28, network: 'mainnet', category: 'Text', description: 'Generate text through the SayGM model gateway.', status: config.saygmApiKey ? 'ready' : 'needs_key', taskKind: 'text', attribution: 'none', website: 'https://saygm.com', reason: config.saygmApiKey ? undefined : 'Add a server-side SayGM API key to enable inference.' },
-    { id: 'desearch', name: 'Desearch', netuid: 22, network: 'mainnet', category: 'Search', description: 'Search the web and retain the source links.', status: config.desearchApiKey ? 'ready' : 'needs_key', taskKind: 'search', attribution: 'none', website: 'https://www.desearch.ai', reason: config.desearchApiKey ? undefined : 'Add a server-side Desearch API key to enable web search.' },
-    { id: 'chronoseek', name: 'ChronoSeek', netuid: 298, network: 'testnet', category: 'Video', description: 'Find matching moments in a video through a configured testnet gateway.', status: config.chronoseekUrl ? 'ready' : 'unavailable', taskKind: 'video-search', attribution: 'query-uids', website: 'https://chronoseek.ai', reason: config.chronoseekUrl ? undefined : 'A reachable ChronoSeek validator gateway must be configured.' },
-    { id: 'chutes', name: 'Chutes', netuid: 64, network: 'mainnet', category: 'Text', description: 'Generate text through the hosted Chutes model gateway.', status: config.chutesApiKey ? 'ready' : 'needs_key', taskKind: 'text', attribution: 'none', website: 'https://chutes.ai', reason: config.chutesApiKey ? undefined : 'Add a server-side Chutes API key to enable inference.' },
-    { id: '404gen', name: '404-GEN', netuid: 17, network: 'mainnet', category: '3D', description: 'Generative 3D content.', status: 'external', taskKind: null, attribution: 'none', website: 'https://404.xyz', reason: '3D generation is not integrated in this workspace.' },
-    { id: 'attelier', name: 'Attelier', netuid: 126, network: 'mainnet', category: 'Video', description: 'Generative video, image, voice, and music tools.', status: 'external', taskKind: null, attribution: 'none', website: 'https://attelier.ai', reason: 'Generation is available from the provider. Execution is not integrated here.' },
-    { id: 'everyframe', name: 'EveryFrame', netuid: 117, network: 'mainnet', category: 'Video', description: 'AI video, image, and audio workflows.', status: 'external', taskKind: null, attribution: 'none', website: 'https://everyframe.studio', reason: 'Visit the provider to create media. Execution is not integrated here.' },
-    { id: 'hippius', name: 'Hippius', netuid: 75, network: 'mainnet', category: 'Storage', description: 'Distributed storage and cloud services.', status: 'external', taskKind: null, attribution: 'none', website: 'https://hippius.com', reason: 'Artifacts in this workspace are stored locally. Hippius uploads are not integrated.' },
-    { id: 'ridges', name: 'Ridges', netuid: 62, network: 'mainnet', category: 'Code', description: 'Competitive coding agents.', status: 'unavailable', taskKind: null, attribution: 'none', website: 'https://github.com/ridgesai', reason: 'A supported public execution adapter is not configured.' },
-  ];
-}
+export { providerCatalog } from './provider-catalog.js';
+export { download404Result } from './gen404.js';
 
 const boundedText = z.string().max(100_000);
 const safeLink = z.string().url().max(2048).refine((value) => ['https:', 'http:'].includes(new URL(value).protocol));
@@ -42,7 +31,12 @@ const chronoSchema = z.object({
   miner_metadata: z.object({ selected_uids: z.array(z.number().int().min(0).max(65535)).max(1000).optional(), queried_uids: z.array(z.number().int().min(0).max(65535)).max(1000).optional() }).optional(),
 });
 
-export type JobExecutor = (input: JobInput) => Promise<JobResult>;
+export interface JobExecutionContext {
+  jobId: string;
+  onProviderTaskCreated?: (id: string) => void;
+}
+
+export type JobExecutor = (input: JobInput, context?: JobExecutionContext) => Promise<JobResult>;
 
 async function readJson(response: Response): Promise<unknown> {
   if (!response.ok) {
@@ -92,7 +86,9 @@ function parseResponse<T>(schema: z.ZodType<T>, raw: unknown): T {
 }
 
 export function createExecutor(config: Config, network: NetworkReader, fetcher: typeof fetch = fetch): JobExecutor {
-  return async (input) => {
+  const execute404 = create404Executor(config, fetcher);
+  return async (input, context) => {
+    if (input.providerId === '404gen') return execute404(input, context);
     if (input.providerId === 'network') {
       const snapshot = await network.snapshot('testnet', input.netuid ?? 298);
       const validators = snapshot.participants.filter((participant) => participant.role === 'validator').length;
@@ -108,6 +104,7 @@ export function createExecutor(config: Config, network: NetworkReader, fetcher: 
           '',
           ...snapshot.participants.map((participant) => `UID ${participant.uid} | ${participant.role} | active: ${participant.active} | endpoint advertised: ${participant.endpointAdvertised} | ${participant.hotkey}`),
         ].join('\n'),
+        blocks: [{ type: 'participants', snapshot }],
         snapshot,
         attribution: { kind: 'registered-participants', uids: snapshot.participants.map((participant) => participant.uid), note: 'Registered on-chain participants only. No inference request was sent to these participants.' },
       };
@@ -121,9 +118,9 @@ export function createExecutor(config: Config, network: NetworkReader, fetcher: 
       if (!model) throw new ApiFailure('no_model_available', 'SayGM has no available chat model. Configure a supported model and retry.', 503);
       const data = parseResponse(chatSchema, await requestJson('https://api.saygm.com/v1/chat/completions', {
         method: 'POST', headers: { Authorization: `Bearer ${config.saygmApiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model, messages: [{ role: 'user', content: input.prompt }], max_tokens: 1200, stream: false }),
+        body: JSON.stringify({ model, messages: [{ role: 'user', content: input.prompt }], max_tokens: input.maxTokens ?? 1200, stream: false }),
       }, fetcher));
-      return { title: 'SayGM response', text: data.choices[0].message.content };
+      return { title: 'SayGM response', text: data.choices[0].message.content, blocks: [{ type: 'text', text: data.choices[0].message.content, model }] };
     }
     if (input.providerId === 'chutes' && config.chutesApiKey) {
       const catalog = parseResponse(chutesModelsSchema, await requestJson('https://llm.chutes.ai/v1/models', {}, fetcher));
@@ -131,26 +128,27 @@ export function createExecutor(config: Config, network: NetworkReader, fetcher: 
       if (!model) throw new ApiFailure('no_model_available', 'Chutes has no matching text model in its current catalog. Check the configured model and retry.', 503);
       const data = parseResponse(chatSchema, await requestJson('https://llm.chutes.ai/v1/chat/completions', {
         method: 'POST', headers: { Authorization: `Bearer ${config.chutesApiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: model.id, messages: [{ role: 'user', content: input.prompt }], max_tokens: Math.min(1200, model.max_output_length ?? 1200), stream: false }),
+        body: JSON.stringify({ model: model.id, messages: [{ role: 'user', content: input.prompt }], max_tokens: Math.min(input.maxTokens ?? 1200, model.max_output_length ?? 1200), stream: false }),
       }, fetcher));
-      return { title: 'Chutes response', text: data.choices[0].message.content };
+      return { title: 'Chutes response', text: data.choices[0].message.content, blocks: [{ type: 'text', text: data.choices[0].message.content, model: model.id }] };
     }
     if (input.providerId === 'desearch' && config.desearchApiKey) {
       const url = new URL('https://api.desearch.ai/web');
       url.searchParams.set('query', input.prompt!);
-      url.searchParams.set('start', '0');
+      url.searchParams.set('start', String(input.start ?? 0));
       const data = parseResponse(searchSchema, await requestJson(url.toString(), { headers: { Authorization: config.desearchApiKey } }, fetcher));
       return {
         title: 'Desearch web results',
         text: data.data.length ? data.data.map((hit) => `${hit.title}\n${hit.snippet}\n${hit.link}`).join('\n\n') : 'No web results were returned for this query.',
         links: data.data.map((hit) => ({ title: hit.title, url: hit.link })),
+        blocks: [{ type: 'search-results', items: data.data.map((hit) => ({ title: hit.title, snippet: hit.snippet, url: hit.link })) }],
       };
     }
     if (input.providerId === 'chronoseek' && config.chronoseekUrl) {
       const requestId = randomUUID();
       const data = parseResponse(chronoSchema, await requestJson(`${config.chronoseekUrl.replace(/\/$/, '')}/search`, {
         method: 'POST', headers: { 'Content-Type': 'application/json', ...(config.chronoseekApiKey ? { Authorization: `Bearer ${config.chronoseekApiKey}` } : {}) },
-        body: JSON.stringify({ protocol_version: '2026-04-10', request_id: requestId, video: { url: input.videoUrl }, query: input.prompt, top_k: 5 }),
+        body: JSON.stringify({ protocol_version: '2026-04-10', request_id: requestId, video: { url: input.videoUrl }, query: input.prompt, top_k: input.topK ?? 5 }),
       }, fetcher));
       if (data.request_id && data.request_id !== requestId) throw new ApiFailure('invalid_provider_response', 'The video gateway returned a different request identifier.', 502);
       if (data.status !== 'completed') throw new ApiFailure('video_search_incomplete', `The video gateway returned ${data.status}; no completed result is available.`, 502);
@@ -163,6 +161,7 @@ export function createExecutor(config: Config, network: NetworkReader, fetcher: 
           `Source video: ${input.videoUrl}`,
         ].join('\n'),
         links: [{ title: 'Source video', url: input.videoUrl! }],
+        blocks: [{ type: 'video-moments', sourceUrl: input.videoUrl!, items: data.results }],
         ...(uids?.length ? { attribution: { kind: 'query-uids' as const, uids: [...new Set(uids)], note: 'Participant UIDs reported by the configured gateway for this request. This is gateway attribution, not independent execution verification.' } } : {}),
       };
     }

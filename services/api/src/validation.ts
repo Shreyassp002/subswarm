@@ -7,27 +7,23 @@ const publicVideoUrl = z.string().trim().min(1).max(2048).url().refine((value) =
   return url.protocol === 'https:' && !url.username && !url.password && !url.port &&
     /^[a-z0-9][a-z0-9.-]+\.[a-z]{2,}$/i.test(url.hostname) &&
     !/\.(localhost|local|internal|test|invalid)$/i.test(url.hostname);
-}, 'Use a public HTTPS video URL without credentials or a custom port.');
+}, 'Use a public HTTPS URL without credentials or a custom port.');
 
-const inputSchema = z.object({
-  providerId: z.enum(['network', 'saygm', 'desearch', 'chronoseek', 'chutes', '404gen', 'attelier', 'everyframe', 'hippius', 'ridges']),
-  prompt: z.string().trim().min(1).max(4000).optional(),
-  videoUrl: publicVideoUrl.optional(),
-  netuid: z.number().int().min(0).max(65535).optional(),
-}).strict();
+const prompt = z.string().trim().min(1).max(4000);
+const chatFields = { prompt, maxTokens: z.number().int().min(1).max(1200).optional() };
+const inputSchema = z.discriminatedUnion('providerId', [
+  z.object({ providerId: z.literal('network'), netuid: z.union([z.literal(298), z.literal(482)]).default(298) }).strict(),
+  z.object({ providerId: z.literal('saygm'), ...chatFields }).strict(),
+  z.object({ providerId: z.literal('chutes'), ...chatFields }).strict(),
+  z.object({ providerId: z.literal('desearch'), prompt, start: z.number().int().min(0).max(100).optional() }).strict(),
+  z.object({ providerId: z.literal('chronoseek'), prompt, videoUrl: publicVideoUrl, topK: z.number().int().min(1).max(20).optional() }).strict(),
+  z.object({ providerId: z.literal('404gen'), prompt: prompt.optional(), inputImageUrl: publicVideoUrl.optional(), model: z.enum(['404-3dgs', '404-mesh']).default('404-3dgs') }).strict()
+    .refine((input) => Boolean(input.prompt) !== Boolean(input.inputImageUrl), 'Supply either a text prompt or an image URL, but not both.')
+    .refine((input) => input.model !== '404-mesh' || Boolean(input.inputImageUrl), 'The 404-mesh model requires a reference image.'),
+]);
 
 export function parseJobInput(raw: unknown): JobInput {
   const parsed = inputSchema.safeParse(raw);
   if (!parsed.success) throw new ApiFailure('invalid_input', parsed.error.issues[0]?.message ?? 'Invalid job input.', 422);
-  const input = parsed.data;
-  if (input.providerId === 'network') {
-    if (input.netuid !== undefined && ![298, 482].includes(input.netuid)) throw new ApiFailure('unsupported_subnet', 'Network scans support testnet subnets 298 and 482.', 422);
-    if (input.videoUrl) throw new ApiFailure('invalid_input', 'A network scan does not accept a video URL.', 422);
-    return { providerId: input.providerId, netuid: input.netuid ?? 298 };
-  }
-  if (!input.prompt) throw new ApiFailure('invalid_input', 'A prompt is required for this provider.', 422);
-  if (input.providerId === 'chronoseek' && !input.videoUrl) throw new ApiFailure('invalid_input', 'A public HTTPS video URL is required.', 422);
-  if (input.providerId !== 'chronoseek' && input.videoUrl) throw new ApiFailure('invalid_input', 'This provider does not accept a video URL.', 422);
-  if (input.netuid !== undefined) throw new ApiFailure('invalid_input', 'This provider does not accept a subnet override.', 422);
-  return input;
+  return parsed.data;
 }

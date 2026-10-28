@@ -8,6 +8,7 @@ Subswarm is a TypeScript pixel village for discovering and using Bittensor servi
 - Registered chain participants are residents. Only request-specific provider evidence can attribute an actual response to a miner. Never invent competitors, winners, provider balances, or completed tasks.
 - Keep provider keys and session tokens out of committed files and logs. Only placeholder environment examples belong in Git.
 - Read-only chain inspection and local/testnet development only. No mainnet transactions or payload signing.
+- Verified deposit receipt retries must be idempotent. A lost HTTP reply must neither duplicate credit nor leave pending-deposit recovery blocked.
 - Keep player jobs and artifacts scoped to their server-owned session. Quota reservations and terminal state transitions must persist across restarts.
 - Reuse appropriately licensed assets and keep their notices. Do not import unrelated contracts, pet ownership, or wallet code from source references.
 - Use concise conventional commit messages without AI attribution. Do not use Unicode em dashes or arrow characters.

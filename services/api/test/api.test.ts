@@ -126,3 +126,39 @@ test('network reads reject unsupported identifiers and share the per-session dai
     store.close();
   }
 });
+
+test('generated file downloads enforce job ownership and retain the admitted provider task reference', async () => {
+  let downloads = 0;
+  const taskId = '0f6af6c5-b20b-491f-928a-6c3c42e465d7';
+  const { app, store } = harness({ downloadModel: async (_config, id, model) => {
+    assert.equal(id, taskId);
+    assert.equal(model, '404-3dgs');
+    downloads++;
+    return new Response('fixture model', { headers: { 'Content-Type': 'application/octet-stream', 'Content-Disposition': 'attachment; filename="model.ply"' } });
+  } });
+  try {
+    const owner = await openSession(app);
+    const stranger = await openSession(app);
+    const sessionId = store.findSession(owner.split('=')[1])!.id;
+    const address = `0x${'11'.repeat(32)}`;
+    const receiver = `0x${'22'.repeat(32)}`;
+    store.bindWallet(sessionId, store.createWalletChallenge(sessionId, address, origin).id);
+    store.creditDeposit(sessionId, { genesisHash: '0x8f9cf856bf558a14440e75569c9e58594757048d7b3a84b5d25f6bd978263105', blockHash: `0x${'33'.repeat(32)}`, blockNumber: 1, eventIndex: 0, from: address, to: receiver, amountRao: '10' }, receiver, 1);
+    const input = { providerId: '404gen', prompt: 'A wooden house', model: '404-3dgs' } as const;
+    const quote = store.createQuote(sessionId, input, '1');
+    const job = store.reserveJob(sessionId, input, '3d', 2, 40, undefined, quote.id);
+    store.startJob(sessionId, job.id);
+    store.recordProviderTask(sessionId, job.id, taskId);
+    assert.throws(() => store.recordProviderTask(sessionId, job.id, '4b8a1ca3-4154-4c20-9331-941938b13702'), /cannot change/);
+    const url = `/v1/jobs/${job.id}/files/model`;
+    assert.equal((await app.request(url, { headers: { Cookie: owner } })).status, 404);
+    store.finishJob(sessionId, job.id, { title: '3D model', text: 'Provider result', providerTaskId: taskId });
+    assert.equal(store.findJob(sessionId, job.id)?.providerTaskId, taskId);
+    assert.equal((await app.request(url, { headers: { Cookie: stranger } })).status, 404);
+    const response = await app.request(url, { headers: { Cookie: owner } });
+    assert.equal(response.status, 200);
+    assert.equal(await response.text(), 'fixture model');
+    assert.equal(response.headers.get('Content-Disposition'), 'attachment; filename="model.ply"');
+    assert.equal(downloads, 1);
+  } finally { store.close(); }
+});

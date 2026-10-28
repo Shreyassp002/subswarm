@@ -31,6 +31,7 @@ test('Chutes discovers a real text model and sends bearer auth with a bounded no
     model: 'google/gemma-4-31B-turbo-TEE', messages: [{ role: 'user', content: 'Describe this task.' }], max_tokens: 1200, stream: false,
   });
   assert.equal(result.text, 'Actual mocked gateway response');
+  assert.deepEqual(result.blocks, [{ type: 'text', text: 'Actual mocked gateway response', model: 'google/gemma-4-31B-turbo-TEE' }]);
   assert.equal(result.attribution, undefined);
   assert.equal(providerCatalog(config, false).find((provider) => provider.id === 'chutes')?.status, 'ready');
   assert.equal(providerCatalog(readConfig({}), false).find((provider) => provider.id === 'chutes')?.status, 'needs_key');
