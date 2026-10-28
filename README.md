@@ -46,6 +46,11 @@ The Map menu provides keyboard-accessible access to every district.
 
 Keys belong only in `services/api/.env`. No provider account is assumed to have
 free credit. Authenticated provider calls have not been verified without keys.
+Each house has Quest and Residents tabs. Its roster is read from that provider's
+configured network and subnet. Search by UID, hotkey or role, or click a resident
+in the world. Registry reads have a separate refresh budget and do not spend
+your daily quest allowance.
+
 Registered residents are chain participants, not evidence that a miner served
 a request or won a competition. Character animation never fabricates results.
 

@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser'
-import type { Participant, ProviderId } from '@subswarm/shared'
+import type { NetworkSnapshot, ProviderId } from '@subswarm/shared'
 import { findPath, type Point } from './navigation'
 import type { WorldBridge, WorldController } from './types'
 import { BUILDINGS, COLLISIONS, PLAYER_START, WORLD_HEIGHT, WORLD_WIDTH, WORLD_SCALE, worldPoint, type VillageBuilding } from './village'
@@ -16,14 +16,7 @@ const STROLLS = [
   [worldPoint(855, 665), worldPoint(855, 769)],
   [worldPoint(1356, 403), worldPoint(1356, 526)],
 ]
-const RESIDENT_STROLLS = [
-  [worldPoint(752, 369), worldPoint(752, 476)],
-  [worldPoint(954, 370), worldPoint(954, 478)],
-  [worldPoint(791, 550), worldPoint(914, 550)],
-  [worldPoint(790, 332), worldPoint(913, 332)],
-  [worldPoint(813, 576), worldPoint(893, 576)],
-  [worldPoint(689, 417), worldPoint(689, 492)],
-]
+
 
 interface Walker {
   sprite: Phaser.GameObjects.Sprite
@@ -61,11 +54,10 @@ export class WorldScene extends Phaser.Scene implements WorldController {
   private route: Point[] = []
   private signs: Sign[] = []
   private walkers: Walker[] = []
-  private participantWalkers: Walker[] = []
+  private participantWalkers = new Map<ProviderId, Walker[]>()
   private couriers: Walker[] = []
   private playerDirection: Direction = 'down'
-  private lastParticipants: Participant[] | null = null
-  private lastParticipantSubnet?: number
+  private lastResidents: Partial<Record<ProviderId, NetworkSnapshot>> = {}
   private previousSelection: ProviderId | null | undefined
   private previousBusy: ProviderId | null | undefined
   private nearest: VillageBuilding | null = null
@@ -189,19 +181,30 @@ export class WorldScene extends Phaser.Scene implements WorldController {
     for (let index = 0; index < 6; index++) this.walkers.push(this.createWalker(index))
   }
 
-  private syncParticipants(participants: Participant[], subnet?: number) {
-    for (const walker of this.participantWalkers) { walker.sprite.destroy(); walker.shadow.destroy(); walker.label?.destroy() }
-    this.participantWalkers = participants.slice(0, RESIDENT_STROLLS.length).map((participant, index) => {
-      const identity = `REGISTERED ${subnet === undefined ? '' : `SN${subnet} / `}UID ${participant.uid}`
-      const walker = this.createWalker(index + 2, identity, RESIDENT_STROLLS[index], 'resident')
-      walker.label?.setText(`UID ${participant.uid}`).setColor('#c0f3de').setVisible(true)
-      walker.sprite.removeAllListeners('pointerover').removeAllListeners('pointerout')
-      walker.sprite.on('pointerover', () => walker.label?.setText(identity))
-      walker.sprite.on('pointerout', () => walker.label?.setText(`UID ${participant.uid}`))
-      return walker
-    })
-    this.lastParticipants = participants
-    this.lastParticipantSubnet = subnet
+  private syncParticipants(residents: Partial<Record<ProviderId, NetworkSnapshot>>) {
+    for (const building of BUILDINGS) {
+      if (building.id === 'network') continue
+      const snapshot = residents[building.id]
+      if (snapshot === this.lastResidents[building.id]) continue
+      for (const walker of this.participantWalkers.get(building.id) ?? []) { walker.sprite.destroy(); walker.shadow.destroy(); walker.label?.destroy() }
+      const walkers: Walker[] = []
+      for (const [index, participant] of (snapshot?.participants.slice(0, 3) ?? []).entries()) {
+        const from = { x: building.entrance.x + (index - 1) * 58 * WORLD_SCALE, y: building.entrance.y + (65 + index * 14) * WORLD_SCALE }
+        const to = { x: from.x + 30 * WORLD_SCALE, y: from.y + 25 * WORLD_SCALE }
+        const path = findPath(from, to)
+        if (!path.length) continue
+        const identity = `${snapshot!.network.toUpperCase()} SN${snapshot!.netuid} / UID ${participant.uid} / ${participant.role.toUpperCase()}`
+        const walker = this.createWalker(index, identity, [path[0], path[path.length - 1]], participant.role === 'validator' ? 'traveler' : 'resident')
+        walker.label?.setText(identity).setColor('#c0f3de').setVisible(false)
+        walker.sprite.removeAllListeners('pointerover').removeAllListeners('pointerout')
+        walker.sprite.on('pointerover', () => walker.label?.setVisible(true))
+        walker.sprite.on('pointerout', () => walker.label?.setVisible(false))
+        walker.sprite.on('pointerdown', () => { if (!inputBlocked()) this.bridge.selectResident(building.id, participant.uid) })
+        walkers.push(walker)
+      }
+      this.participantWalkers.set(building.id, walkers)
+    }
+    this.lastResidents = residents
   }
 
   private syncCouriers(provider: ProviderId | null) {
@@ -310,7 +313,7 @@ export class WorldScene extends Phaser.Scene implements WorldController {
   update(time: number, delta: number) {
     if (!this.player || !this.keys) return
     const state = this.bridge.getState()
-    if (state.participants !== this.lastParticipants || state.participantSubnet !== this.lastParticipantSubnet) this.syncParticipants(state.participants, state.participantSubnet)
+    if (state.residents !== this.lastResidents) this.syncParticipants(state.residents)
     if (state.selectedProvider !== this.previousSelection || state.busyProvider !== this.previousBusy) {
       for (const sign of this.signs) this.paintSign(sign, sign.building.id === state.selectedProvider, sign.building.id === state.busyProvider)
       const selected = BUILDINGS.find(building => building.id === state.selectedProvider)
@@ -365,6 +368,6 @@ export class WorldScene extends Phaser.Scene implements WorldController {
       if (nearby) this.entranceHint.setPosition(nearby.entrance.x, nearby.entrance.y - 37 * WORLD_SCALE)
     }
 
-    for (const walker of [...this.walkers, ...this.participantWalkers, ...this.couriers]) this.updateWalker(walker, time, delta)
+    for (const walker of [...this.walkers, ...Array.from(this.participantWalkers.values()).flat(), ...this.couriers]) this.updateWalker(walker, time, delta)
   }
 }

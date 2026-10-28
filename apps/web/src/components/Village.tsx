@@ -2,13 +2,14 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { BookOpen, ChevronRight, CircleAlert, Compass, HelpCircle, LoaderCircle, Map, RefreshCw, Wallet, X } from "lucide-react";
 import type { Artifact, Job, JobInput, NetworkSnapshot, Provider, ProviderId, Session, WalletState, PaymentSettings } from "@subswarm/shared";
 import { api } from "@/lib/api";
 import { districts, providerOrder, statusLabel } from "@/lib/providers";
 import TaskPanel from "@/components/TaskPanel";
 import Journal from "@/components/Journal";
+import { useResidents } from "@/hooks/useResidents";
 import { formatTAO } from "@/lib/money";
 const WalletPanel = dynamic(() => import("@/components/WalletPanel"), { ssr: false });
 
@@ -21,6 +22,7 @@ const names: Record<ProviderId, string> = { saygm: "SayGM", desearch: "Desearch"
 const active = (job: Job | null) => job?.status === "queued" || job?.status === "running";
 
 export default function Village() {
+  const [selectedUid, setSelectedUid] = useState<number | null>(null);
   const [walletOpen, setWalletOpen] = useState(false);
   const [wallet, setWallet] = useState<WalletState | null>(null);
   const [payments, setPayments] = useState<PaymentSettings | null>(null);
@@ -41,6 +43,8 @@ export default function Village() {
   const [taskError, setTaskError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [reload, setReload] = useState(0);
+  const { residents, refresh: refreshResidents } = useResidents(providers, !!session);
+  const residentSnapshots = useMemo(() => Object.fromEntries(Object.entries(residents).filter(([, state]) => !!state.snapshot).map(([id, state]) => [id, state.snapshot!])) as Partial<Record<ProviderId, NetworkSnapshot>>, [residents]);
   const pollingJobId = active(currentJob) ? currentJob?.id : null;
 
   const refreshWallet = useCallback(async (signal?: AbortSignal) => {
@@ -137,11 +141,17 @@ export default function Village() {
   }, []);
 
   function selectProvider(id: ProviderId) {
+    setSelectedUid(null);
     setWalletOpen(false);
     setSelectedProvider(id);
     setTaskError(null);
     setHelpOpen(false);
     setDirectoryOpen(false);
+  }
+
+  function selectResident(id: ProviderId, uid: number) {
+    selectProvider(id);
+    setSelectedUid(uid);
   }
 
   function openWallet() {
@@ -192,7 +202,7 @@ export default function Village() {
         </nav>
       </header>
       <main className="world-shell" aria-label="Interactive Subswarm village">
-        <div className="world-canvas-layer"><WorldCanvas selectedProvider={selectedProvider} onSelectProvider={selectProvider} participants={snapshot?.participants || []} participantSubnet={snapshot?.netuid} busyProvider={busy ? currentJob?.providerId : null} /></div>
+        <div className="world-canvas-layer"><WorldCanvas selectedProvider={selectedProvider} onSelectProvider={selectProvider} residents={residentSnapshots} onSelectResident={selectResident} busyProvider={busy ? currentJob?.providerId : null} /></div>
         {directoryOpen && <aside className="directory parchment panel-enter" id="district-directory" aria-labelledby="directory-title">
           <div className="directory-heading"><h2 id="directory-title">Districts</h2><button className="icon-button ink" aria-label="Close map directory" onClick={() => setDirectoryOpen(false)}><X size={17} /></button></div>
           <div className="provider-list">{providerOrder.map((id) => {
@@ -202,12 +212,12 @@ export default function Village() {
             return <button key={id} className="provider-row" onClick={() => selectProvider(id)} disabled={!provider} title={provider ? statusLabel[provider.status] : "Waiting for the village API"}><span className="district-number">{display.number}</span><Icon size={16} className="district-icon" /><span className="district-name">{provider?.name || names[id]}</span>{provider?.status === "ready" ? <i className="ready-dot" aria-label="Ready" /> : <ChevronRight size={12} className="district-chevron" />}</button>;
           })}</div>
         </aside>}
-        {selected && <TaskPanel key={selected.id} provider={selected} job={selectedJob} busy={busy} submitting={submitting} connected={connection === "online"} error={taskError} wallet={wallet} payments={payments} onOpenWallet={openWallet} onSubmit={sendQuest} onClose={() => setSelectedProvider(null)} onOpenJournal={() => openJournal(selectedJob?.id || null)} />}
+        {selected && <TaskPanel key={`${selected.id}:${selectedUid}`} provider={selected} residentState={residents[selected.id]} selectedUid={selectedUid} onRefreshResidents={() => refreshResidents(selected.id)} job={selectedJob} busy={busy} submitting={submitting} connected={connection === "online"} error={taskError} wallet={wallet} payments={payments} onOpenWallet={openWallet} onSubmit={sendQuest} onClose={() => setSelectedProvider(null)} onOpenJournal={() => openJournal(selectedJob?.id || null)} />}
         {walletOpen && <WalletPanel onClose={() => setWalletOpen(false)} onChanged={() => void refreshWallet()} />}
         {selectedProvider && !selected && <aside className="task-panel parchment panel-enter" aria-labelledby="pending-provider-title"><div className="task-topline"><span>DISTRICT {districts[selectedProvider].number}</span><button className="icon-button ink" onClick={() => setSelectedProvider(null)} aria-label="Close district details"><X size={17} /></button></div><h2 id="pending-provider-title">{names[selectedProvider]}</h2><p className="provider-description">{connection === "loading" ? "Connecting to the village to check this provider..." : "Connect to the village to check this provider and send quests."}</p></aside>}
         {connection === "offline" && <div className="offline-message" role="alert"><CircleAlert size={15} /><div><p>{error}</p><button onClick={() => setReload((value) => value + 1)}><RefreshCw size={12} />Reconnect</button></div></div>}
-        {helpOpen && <section className="help-panel parchment panel-enter" aria-labelledby="help-title"><div className="help-heading"><Compass size={19} /><h2 id="help-title">Exploring the village</h2><button className="icon-button ink" aria-label="Close explorer guide" onClick={() => setHelpOpen(false)}><X size={17} /></button></div><p>Use WASD or the arrow keys to walk. Click to move, click a district sign to open it, or press E near an entrance.</p><p>Send a quest to a provider and find the saved result in your journal. Town Hall reads the testnet registry without an API key.</p><p className="field-hint">Registered residents are chain participants, not a claim that they served a request. Your session is kept by a browser cookie.</p></section>}
-        <div className="world-status" aria-live="polite"><div className="connection-line"><span className={`connection-indicator ${connection}`} /><span>{connection === "online" ? "Connected" : connection === "loading" ? "Connecting..." : "Offline"}</span>{snapshot && <span className="resident-count">/ Testnet {snapshot.netuid} / {snapshot.totalParticipants} registered residents</span>}{chainUnavailable && !snapshot && <span className="resident-count">/ Chain registry unavailable</span>}{!busy && currentJob && <button className="active-quest-link" onClick={() => currentJob.status === "completed" ? openJournal(currentJob.id) : selectProvider(currentJob.providerId)}>{currentJob.status === "completed" ? "Quest complete: read result" : "Quest failed: view details"}<ChevronRight size={12} /></button>}{busy && <button className="active-quest-link" onClick={() => selectProvider(currentJob!.providerId)}><LoaderCircle size={11} className="spin" />View current quest</button>}</div><p className="keyboard-hint">WASD / arrows to move. Click to walk. E to enter.</p></div>
+        {helpOpen && <section className="help-panel parchment panel-enter" aria-labelledby="help-title"><div className="help-heading"><Compass size={19} /><h2 id="help-title">Exploring the village</h2><button className="icon-button ink" aria-label="Close explorer guide" onClick={() => setHelpOpen(false)}><X size={17} /></button></div><p>Use WASD or the arrow keys to walk. Click to move, click a district sign to open it, or press E near an entrance.</p><p>Send a quest to a provider and find the saved result in your journal. Town Hall reads the testnet registry without an API key.</p><p className="field-hint">House residents come from each house&apos;s public subnet registry. Hover to see their role. Click one to inspect its UID and hotkey. Couriers animate requests; they do not identify competing miners. Your session is kept by a browser cookie.</p></section>}
+        <div className="world-status" aria-live="polite"><div className="connection-line"><span className={`connection-indicator ${connection}`} /><span>{connection === "online" ? "Connected" : connection === "loading" ? "Connecting..." : "Offline"}</span>{snapshot && <span className="resident-count">/ Testnet registry {snapshot.netuid} / {Object.keys(residentSnapshots).length} house rosters loaded</span>}{chainUnavailable && !snapshot && <span className="resident-count">/ Chain registry unavailable</span>}{!busy && currentJob && <button className="active-quest-link" onClick={() => currentJob.status === "completed" ? openJournal(currentJob.id) : selectProvider(currentJob.providerId)}>{currentJob.status === "completed" ? "Quest complete: read result" : "Quest failed: view details"}<ChevronRight size={12} /></button>}{busy && <button className="active-quest-link" onClick={() => selectProvider(currentJob!.providerId)}><LoaderCircle size={11} className="spin" />View current quest</button>}</div><p className="keyboard-hint">WASD / arrows to move. Click to walk. E to enter.</p></div>
       </main>
       {journalOpen && <Journal artifacts={artifacts} jobs={jobs} providers={providers} initialJobId={journalJobId} onClose={() => setJournalOpen(false)} onViewQuest={(id) => { setJournalOpen(false); selectProvider(id); }} />}
     </div>

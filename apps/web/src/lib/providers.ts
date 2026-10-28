@@ -22,3 +22,16 @@ export const statusLabel = {
   unavailable: "Unavailable",
   external: "Visit provider",
 };
+
+export const questRewards: Record<ProviderId, string> = {
+  saygm: 'A written answer, saved in your journal.',
+  desearch: 'Web results with excerpts and source links.',
+  '404gen': 'A downloadable 3D splat or mesh.',
+  chutes: 'A text response from a Chutes model.',
+  everyframe: 'Video and image tools at the provider studio.',
+  hippius: 'File storage through the provider service.',
+  ridges: 'A proposed code change to review.',
+  attelier: 'Media creation tools at the provider.',
+  chronoseek: 'Matching video moments with timestamps.',
+  network: 'A snapshot of registered miners and validators.',
+};

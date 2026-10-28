@@ -1,8 +1,8 @@
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4100").replace(/\/$/, "");
 
-export async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
+export async function api<T>(path: string, options: RequestInit = {}, timeoutMs = 25_000): Promise<T> {
   const timeout = new AbortController();
-  const timer = setTimeout(() => timeout.abort(), 25_000);
+  const timer = setTimeout(() => timeout.abort(), timeoutMs);
   const signal = options.signal
     ? AbortSignal.any([options.signal, timeout.signal])
     : timeout.signal;

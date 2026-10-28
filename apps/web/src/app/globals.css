@@ -318,3 +318,123 @@ button, p, h1, h2, h3, h4 { margin: 0; }
   .resident-roster > div { grid-template-columns: 56px 1fr; }
   .resident-roster code { grid-column: 1 / -1; }
 }
+
+.task-panel { width: 408px; scrollbar-width: none; padding: 0 24px; }
+.task-panel::-webkit-scrollbar { display: none; }
+.task-panel .field-hint { color: #706f59; }
+.house-scene { position: relative; height: 152px; margin: 0 -24px; background-image: url('/worlds/town-evening-v3.png'); background-size: 1512px 849.6px; image-rendering: pixelated; border-bottom: 3px solid #735a38; }
+.house-scene-label { position: absolute; top: 12px; left: 12px; background: #23382de8; color: #f3ecd5; font: 11px Pixelify, monospace; letter-spacing: .7px; padding: 7px 10px; }
+.scene-close { position: absolute; right: 10px; top: 9px; width: 34px; height: 34px; color: #f3ecd5; border: 1px solid #f3ecd55c; background: #23382de8; border-radius: 0; }
+.scene-close:hover { background: #23382d; }
+.house-scene-number { position: absolute; bottom: 9px; right: 14px; font: 40px Pixelify, monospace; color: #fff4cf; text-shadow: 2px 2px #39452e; }
+.house-identity { display: flex; align-items: center; gap: 12px; margin: 20px 0 12px; }
+.house-identity h2 { font: 32px/1.1 Pixelify, monospace; margin-top: 4px; }
+.house-identity .eyebrow { font-size: 9px; letter-spacing: .8px; color: #75694e; }
+.house-netuid { margin-left: auto; font: 10px var(--font-mono); color: #776b51; white-space: nowrap; }
+.house-tabs { display: flex; border-bottom: 1px solid #bbae87; margin: 20px 0; gap: 22px; }
+.house-tabs button { display: flex; align-items: center; gap: 7px; padding: 12px 0; font: 18px Pixelify, monospace; color: #79775f; border-bottom: 3px solid transparent; margin-bottom: -1px; }
+.house-tabs button[aria-selected='true'] { color: #34472d; border-bottom-color: #52663b; }
+.house-tabs small { font: 10px var(--font-mono); padding: 3px 6px; background: #e0d9bc; }
+.task-panel .section-caption h3 { font-size: 22px; }
+.quest-form { padding-top: 2px; }
+.quest-form textarea { min-height: 112px; }
+.quest-form input, .quest-form select, .quest-form textarea { padding: 12px; border-color: #b7ab88; box-shadow: inset 0 2px #ded4b84d; }
+.quest-options, .quiet-details { font-size: 11px; color: #6e6d55; margin: 16px 0; }
+.quest-options > summary { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 10px 0; border-bottom: 1px dashed #c8bd9d; }
+.quest-options > summary::after { content: '+'; margin-left: auto; }
+.quest-options[open] > summary::after { content: '-'; }
+.quiet-details summary { cursor: pointer; padding: 4px 0; }
+.quiet-details p { line-height: 1.7; margin: 9px 0; overflow-wrap: anywhere; }
+.quest-reward { display: flex; gap: 14px; padding: 16px 0; margin: 12px 0 0; border-block: 1px dashed #c9bc97; }
+.quest-reward > svg { flex-shrink: 0; color: #796849; margin-top: 4px; }
+.quest-reward span { font: 9px var(--font-mono); color: #796849; letter-spacing: .8px; }
+.quest-reward p { font-size: 12px; line-height: 1.65; color: #575c47; margin-top: 6px; }
+.house-access { margin-top: 18px; font-size: 11px; color: #7a6543; }
+.house-access summary { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.house-access summary::before { content: ''; width: 6px; height: 6px; background: #aa8247; flex-shrink: 0; }
+.house-access summary span { margin-left: auto; text-decoration: underline; }
+.house-access p { margin-top: 8px; line-height: 1.7; }
+.quest-price { border: none; padding-top: 6px; }
+.resident-intro { display: flex; gap: 8px; justify-content: space-between; align-items: center; }
+.resident-intro h3 { font: 22px Pixelify, monospace; }
+.resident-intro p { font-size: 10px; color: #776d53; margin-top: 6px; }
+.resident-stats { display: grid; grid-template-columns: 1fr 1fr; padding: 18px 0; margin: 12px 0; border-block: 1px solid #d4c8a7; }
+.resident-stats > div { display: flex; gap: 10px; align-items: center; }
+.resident-stats > div + div { border-left: 1px solid #d4c8a7; padding-left: 16px; }
+.resident-stats strong { display: block; font: 27px Pixelify, monospace; }
+.resident-stats div div > span { font-size: 10px; color: #716d54; }
+.pixel-person { display: inline-block; flex-shrink: 0; width: 40px; height: 40px; background: url('/characters/ninja-adventure/resident.png') 0 0 / 160px 280px; image-rendering: pixelated; }
+.pixel-person.validator { background-image: url('/characters/ninja-adventure/traveler.png'); }
+.resident-search { display: flex; align-items: center; gap: 10px; border: 1px solid #b7ab88; background: #fff9e5; padding: 10px 12px; margin: 16px 0 8px; }
+.resident-search input { min-width: 0; width: 100%; border: none; background: transparent; font-size: 12px; color: #3c4938; outline: none; }
+.resident-search:focus-within { outline: 2px solid #7e9256; }
+.house-roster { max-height: 330px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #a29168 #e5dcc0; }
+.house-roster > details { border-bottom: 1px solid #d4c8a7; }
+.house-roster summary { display: flex; align-items: center; gap: 12px; padding: 12px 4px; cursor: pointer; }
+.house-roster summary:hover { background: #e9e2c9; }
+.house-roster summary::after { content: '+'; color: #817556; }
+.house-roster details[open] summary::after { content: '-'; }
+.house-roster summary strong { display: block; font: 17px Pixelify, monospace; }
+.house-roster summary small { display: block; font-size: 10px; color: #746f56; margin-top: 4px; }
+.resident-shortkey { margin-left: auto; font: 9px var(--font-mono); color: #746f56; }
+.resident-identity { padding: 0 12px 14px; }
+.resident-identity code { display: block; overflow-wrap: anywhere; user-select: all; font: 10px/1.7 var(--font-mono); }
+.resident-identity dl { display: grid; grid-template-columns: 1fr auto; gap: 7px; font-size: 10px; color: #746f56; margin-top: 10px; }
+.house-roster .selected-resident { background: #e4e4c8; }
+.purse-hero { text-align: center; padding: 22px 0 20px; }
+.purse-hero h2 { font: 32px/1.2 Pixelify, monospace; margin: 7px 0; }
+.purse-hero > p:last-child { font-size: 12px; color: #746b51; }
+.purse-hero .eyebrow { font: 9px var(--font-mono); letter-spacing: 1.6px; color: #77694b; margin-top: 20px; }
+.purse-illustration { position: relative; width: 106px; height: 92px; margin: auto; }
+.purse-bag { position: absolute; bottom: 0; left: 15px; width: 74px; height: 65px; background: #b78949; border: 4px solid #674d2f; box-shadow: inset -9px -6px #956937, inset 7px 0 #cba05e, 4px 4px #cbbd96; clip-path: polygon(15% 0,85% 0,85% 12%,100% 12%,100% 85%,90% 85%,90% 100%,10% 100%,10% 85%,0 85%,0 12%,15% 12%); display: grid; place-items: center; }
+.purse-bag span { font: 43px Pixelify, monospace; color: #f6d98f; text-shadow: 2px 2px #735233; }
+.purse-cord { position: absolute; top: 7px; left: 32px; width: 42px; height: 23px; background: #cda468; border: 4px solid #674d2f; box-shadow: 0 6px #674d2f; transform: skewX(-8deg); }
+.purse-coin { position: absolute; right: -2px; bottom: 0; width: 33px; height: 33px; display: grid; place-items: center; color: #80572c; background: #e8c66f; border: 3px solid #a47e37; font: 25px Pixelify, monospace; clip-path: polygon(20% 0,80% 0,80% 10%,100% 10%,100% 80%,80% 80%,80% 100%,20% 100%,20% 90%,0 90%,0 20%,20% 20%); }
+.purse-balance { padding: 20px; background: #344b39; color: #fff1ce; border: 2px solid #283b2e; box-shadow: inset 0 0 0 2px #5f7153; }
+.purse-balance > span { font: 9px var(--font-mono); letter-spacing: 1px; color: #d4d4b3; }
+.purse-balance > strong { display: block; font: 38px Pixelify, monospace; margin: 9px 0 16px; overflow-wrap: anywhere; }
+.purse-balance small { font: 13px Pixelify, monospace; color: #dedbc0; white-space: nowrap; }
+.purse-balance > div { display: flex; justify-content: space-between; gap: 12px; border-top: 1px solid #708066; padding-top: 13px; font-size: 10px; color: #d4d4b3; }
+.purse-balance b { font-weight: 400; white-space: nowrap; }
+.wallet-panel .quest-form > .primary-button { min-height: 46px; }
+.wallet-extension { text-align: center; font-size: 11px; color: #75694e; margin: 15px 0; }
+.wallet-extension a { text-decoration: underline; display: inline-flex; align-items: center; gap: 3px; }
+.wallet-assurance { display: flex; justify-content: center; gap: 7px; font-size: 10px; line-height: 1.6; color: #687356; margin: 14px 0 20px; }
+.wallet-assurance svg { flex-shrink: 0; }
+.purse-closed { display: flex; gap: 12px; padding: 16px 0; border-block: 1px solid #c9bc97; }
+.purse-closed > svg { flex-shrink: 0; color: #8c784b; margin-top: 3px; }
+.purse-closed strong { font: 18px Pixelify, monospace; }
+.purse-closed p { font-size: 11px; line-height: 1.6; margin-top: 5px; color: #746d55; }
+.illustrated-empty { padding: 24px 10px; text-align: center; color: #897957; }
+.illustrated-empty > svg { margin: 0 auto 12px; }
+.illustrated-empty h4 { font: 20px Pixelify, monospace; color: #676347; }
+.illustrated-empty p { font-size: 11px; line-height: 1.6; margin-top: 6px; }
+.task-panel .panel-footnote { font-size: 9px; line-height: 1.6; }
+@media (max-width: 767px) {
+  .task-panel { width: auto; padding: 0 18px; left: 12px; right: 12px; }
+  .house-scene { margin: 0 -18px; height: 138px; }
+  .house-identity h2 { font-size: 29px; }
+  .quest-form input, .quest-form select, .quest-form textarea, .resident-search input { font-size: 16px; }
+  .resident-stats > div + div { padding-left: 8px; }
+  .resident-shortkey { font-size: 8px; }
+}
+.house-panel { display: flex; flex-direction: column; overflow: hidden; }
+.house-header, .house-tabs, .quest-checkout { flex-shrink: 0; }
+.house-header .house-scene { height: 132px; }
+.house-header .house-identity { margin-top: 16px; }
+.house-panel .house-tabs { margin: 12px 0 0; }
+.house-body { overflow-y: auto; min-height: 0; padding: 18px 0; scrollbar-width: none; overscroll-behavior: contain; }
+.house-body::-webkit-scrollbar { display: none; }
+.quest-checkout { padding: 0 0 16px; border-top: 1px solid #c9bc97; }
+.quest-checkout .house-access { margin-top: 12px; }
+.quest-checkout .quest-price { margin: 12px 0 8px; padding: 0; align-items: center; }
+.quest-checkout .primary-button { width: 100%; min-height: 44px; }
+.quest-checkout .field-hint { margin-bottom: 10px; }
+.quest-checkout .house-access p { max-height: 80px; overflow-y: auto; }
+@media (max-width: 767px) {
+  .house-header .house-scene { height: 100px; }
+  .house-header .house-identity { margin: 12px 0 8px; }
+  .house-header .provider-description { font-size: 11px; }
+  .house-panel .house-tabs { margin-top: 8px; }
+  .house-body { padding-top: 14px; }
+}

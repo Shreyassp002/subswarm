@@ -1,32 +1,32 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import type { Participant, ProviderId } from '@subswarm/shared'
+import type { NetworkSnapshot, ProviderId } from '@subswarm/shared'
 import type { WorldController, WorldState } from '../game/types'
 
 interface WorldCanvasProps {
   selectedProvider: ProviderId | null
   onSelectProvider: (id: ProviderId) => void
-  participants?: Participant[]
-  participantSubnet?: number
+  residents: Partial<Record<ProviderId, NetworkSnapshot>>
+  onSelectResident: (id: ProviderId, uid: number) => void
   busyProvider?: ProviderId | null
 }
 
-const EMPTY_PARTICIPANTS: Participant[] = []
-
-export default function WorldCanvas({ selectedProvider, onSelectProvider, participants = EMPTY_PARTICIPANTS, participantSubnet, busyProvider = null }: WorldCanvasProps) {
+export default function WorldCanvas({ selectedProvider, onSelectProvider, residents, onSelectResident, busyProvider = null }: WorldCanvasProps) {
   const host = useRef<HTMLDivElement>(null)
   const controller = useRef<WorldController | null>(null)
-  const state = useRef<WorldState>({ selectedProvider, participants, participantSubnet, busyProvider })
+  const state = useRef<WorldState>({ selectedProvider, residents, busyProvider })
   const select = useRef(onSelectProvider)
+  const selectResident = useRef(onSelectResident)
   const [ready, setReady] = useState(false)
   const [error, setError] = useState(false)
   const [nearby, setNearby] = useState<string | null>(null)
 
   useEffect(() => {
-    state.current = { selectedProvider, participants, participantSubnet, busyProvider }
+    state.current = { selectedProvider, residents, busyProvider }
     select.current = onSelectProvider
-  }, [selectedProvider, participants, participantSubnet, busyProvider, onSelectProvider])
+    selectResident.current = onSelectResident
+  }, [selectedProvider, residents, busyProvider, onSelectProvider, onSelectResident])
 
   useEffect(() => {
     const element = host.current
@@ -41,6 +41,7 @@ export default function WorldCanvas({ selectedProvider, onSelectProvider, partic
       const scene = new WorldScene({
         getState: () => state.current,
         selectProvider: id => select.current(id),
+        selectResident: (id, uid) => selectResident.current(id, uid),
         nearby: name => { if (!canceled) setNearby(name) },
         ready: () => { if (!canceled) { controller.current = scene; setReady(true) } },
       })
