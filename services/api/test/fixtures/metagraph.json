@@ -1,0 +1,14 @@
+{
+  "netuid": 298,
+  "name": "video-search",
+  "block": 8000000,
+  "num_uids": 3,
+  "hotkeys": ["registered-validator", "registered-miner-a", "registered-miner-b"],
+  "validator_permit": [true, false, false],
+  "active": [false, true, false],
+  "axons": [
+    { "ip": 0, "port": 0 },
+    { "ip": 1234567890, "port": 8000 },
+    { "ip": 0, "port": 8000 }
+  ]
+}
