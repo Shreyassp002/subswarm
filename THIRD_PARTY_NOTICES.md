@@ -22,7 +22,21 @@ Kenney Tiny Dungeon character artwork is distributed under CC0. Its original
 license is retained beside the imported character assets. See
 [the author's asset page](https://kenney.nl/assets/tiny-dungeon).
 
+Ninja Adventure directional character sprites are distributed under CC0. The
+active player, town couriers, and registered resident characters use unmodified
+sheets from the [official asset source](https://pixel-boy.itch.io/ninja-adventure-asset-pack)
+and its linked GitHub project, revision `6ac78232d5aedcc85ce5f27d060ea92366f7c24a`.
+Source paths and license details are retained in
+`apps/web/public/characters/ninja-adventure/LICENSE.txt`. These decorative sprites
+do not identify an actual provider participant unless a registered UID is shown.
+
 ## Dependencies
 
 Framework and library licenses remain with the respective installed packages.
 The npm lockfile records exact resolved versions and integrity hashes.
+
+## Interface font
+
+Pixelify Sans is distributed under the SIL Open Font License 1.1. The font and
+license are retained in `apps/web/public/fonts/pixelify-sans`, sourced from
+[Google Fonts](https://github.com/google/fonts/tree/main/ofl/pixelifysans).

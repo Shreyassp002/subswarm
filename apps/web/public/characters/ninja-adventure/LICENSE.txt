@@ -1,0 +1,17 @@
+Ninja Adventure character artwork
+License: Creative Commons Zero v1.0 Universal (CC0-1.0)
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Official asset and license declaration:
+https://pixel-boy.itch.io/ninja-adventure-asset-pack
+
+Source: https://github.com/pixel-boy/NinjaAdventure
+Revision: 6ac78232d5aedcc85ce5f27d060ea92366f7c24a
+
+Unmodified source files, renamed for application roles:
+traveler.png: content/character/ninja_blue/sprite.png
+courier.png: content/character/samurai_blue/sprite.png
+resident.png: content/character/samurai_green/samurai_green.png
+
+The official asset page designates all assets CC0, including commercial use.
+Attribution is appreciated but not required. No project scripts are included.
