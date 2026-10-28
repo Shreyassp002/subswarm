@@ -5,6 +5,7 @@ import { BookOpen, Check, ChevronRight, Copy, ExternalLink, FileText, ScrollText
 import type { Artifact, Job, Provider, ProviderId } from "@subswarm/shared";
 import { districts } from "@/lib/providers";
 import { safeUrl } from "@/lib/api";
+import ResultView from "@/components/ResultView";
 import ResultEvidence from "@/components/ResultEvidence";
 
 interface Props {
@@ -64,8 +65,8 @@ export default function Journal({ artifacts, jobs, providers, initialJobId, onCl
             <div className="artifact-detail-heading"><span className="eyebrow">{selected.type.replaceAll("-", " ")}</span><button className="icon-button ink" aria-label={copyStatus === "copied" ? "Output copied" : "Copy output"} title={copyStatus === "copied" ? "Copied" : "Copy output"} onClick={copy}>{copyStatus === "copied" ? <Check size={17} /> : <Copy size={17} />}</button></div>
             {copyStatus !== "idle" && <p className="field-hint" role="status">{copyStatus === "copied" ? "Copied to clipboard." : "Clipboard unavailable. Select the output text to copy it."}</p>}
             <h3>{selected.title}</h3>
-            <div className="artifact-body">{selected.content}</div>
-            {selectedJob?.result?.links?.map((link, index) => {
+            <>{selectedJob?.result ? <ResultView result={selectedJob.result} /> : <div className="artifact-body">{selected.content}</div>}</>
+            {(!selectedJob?.result?.blocks?.length ? selectedJob?.result?.links : undefined)?.map((link, index) => {
               const url = safeUrl(link.url);
               return url ? <a className="result-link" key={`${url}-${index}`} href={url} target="_blank" rel="noopener noreferrer">{link.title}<ExternalLink size={12} /></a> : null;
             })}

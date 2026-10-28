@@ -36,3 +36,8 @@ export function safeUrl(value: string): string | null {
     return null;
   }
 }
+
+export function downloadUrl(value: string): string | null {
+  if (!/^\/v1\/jobs\/[a-zA-Z0-9-]+\/files\/model$/.test(value)) return null;
+  return `${API_URL}${value}`;
+}

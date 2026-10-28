@@ -241,3 +241,80 @@ button, p, h1, h2, h3, h4 { margin: 0; }
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
   .working-track span { width: 100%; opacity: .7; }
 }
+
+@font-face { font-family: Pixelify; src: url('/fonts/pixelify-sans/PixelifySans.ttf') format('truetype'); font-style: normal; font-weight: 400 700; font-display: swap; }
+.brand, .provider-heading h2, .journal-title h2, .section-caption h3, .quest-form > h3, .wallet-ledger h3, .help-heading h2 { font-family: Pixelify, monospace; letter-spacing: .2px; }
+.brand { font-size: 31px; }
+.parchment { border: 3px solid #735a38; border-radius: 0; box-shadow: inset 0 0 0 2px #fbf4da, 0 3px 0 #372d20, 4px 7px 0 #101b2145; background: #f3ecd5; }
+.task-panel { width: 390px; padding: 0 22px; scrollbar-width: thin; scrollbar-color: #a29168 #e5dcc0; }
+.task-topline { font-family: Pixelify, monospace; font-size: 13px; color: #7b6848; border-bottom: 1px solid #c9bc97; }
+.provider-heading h2 { font-size: 30px; }
+.provider-emblem { border: 2px solid #81734d; border-radius: 0; box-shadow: 2px 2px 0 #c4b88e; }
+.provider-description { font-size: 12px; line-height: 1.7; }
+.provider-meta { font-size: 10px; }
+.world-action { border-radius: 0; border-color: #b8ab783d; box-shadow: 0 2px 0 #0b191e88; }
+.world-action > span { font-family: Pixelify, monospace; font-size: 16px; }
+.section-caption h3 { font-size: 19px; font-weight: 500; }
+.primary-button { font-family: Pixelify, monospace; font-size: 17px; border: 2px solid #34442d; border-radius: 0; box-shadow: inset 0 1px #7d9462, 0 3px 0 #26311f; }
+.primary-button:active:not(:disabled) { transform: translateY(1px); box-shadow: inset 0 1px #7d9462, 0 1px 0 #26311f; }
+.secondary-button { border-radius: 0; font-size: 12px; border-color: #afa37e; }
+.quest-form label { font-size: 12px; margin: 15px 0 7px; }
+.quest-form label span { font-size: 10px; font-weight: 400; color: #8f8b70; }
+.quest-form select, .quest-form textarea, .quest-form input { font-size: 13px; background: #fff9e5; border-color: #b4aa87; border-radius: 0; }
+.quest-form .field-hint, .quest-delivery p { font-size: 11px; line-height: 1.7; }
+.quest-field .field-hint { margin-top: 5px; }
+.quest-delivery { margin-top: 18px; padding: 12px 0; border-top: 1px dashed #c3b792; }
+.quest-delivery > span { font: 10px var(--font-mono); color: #86764f; display: block; margin: 4px 0 6px; }
+.quest-delivery p { color: #6c7057; margin-bottom: 8px; }
+.request-unavailable { font-size: 11px; line-height: 1.7; color: #8e613e; padding: 10px; border-left: 3px solid #b59052; background: #eaddbe; }
+.quest-price { display: flex; justify-content: space-between; gap: 12px; border-top: 1px solid #c9bc97; padding: 15px 0 8px; margin-top: 15px; font-size: 12px; }
+.quest-price strong { color: #4d6337; font-family: Pixelify, monospace; font-size: 19px; }
+.balance-grid { display: grid; grid-template-columns: 1fr 1fr; border-block: 1px solid #c9bc97; padding: 16px 0; margin: 16px 0; gap: 12px; }
+.balance-grid > div { min-width: 0; }
+.balance-grid span { display: block; color: #837b5d; font-size: 10px; margin-bottom: 8px; }
+.balance-grid strong { font: 19px Pixelify, monospace; overflow-wrap: anywhere; }
+.balance-grid small { display: block; font: 10px var(--font-mono); color: #88866b; margin-top: 4px; }
+.wallet-address { display: block; overflow-wrap: anywhere; font: 10px/1.8 var(--font-mono); margin: 8px 0; }
+.wallet-connection { padding: 12px 0; }
+.wallet-status { display: flex; gap: 8px; align-items: flex-start; font-size: 12px; line-height: 1.7; padding: 12px 0; }
+.wallet-status svg { flex-shrink: 0; margin-top: 3px; }
+.deposit-review { border-left: 3px solid #84935f; padding: 12px; background: #e7e5c6; margin: 14px 0; }
+.deposit-review h3, .wallet-ledger h3 { font: 21px Pixelify, monospace; }
+.deposit-review dl { font-size: 11px; }
+.deposit-review dt { color: #8b8260; margin-top: 10px; }
+.deposit-review dd { margin: 3px 0 0; }
+.receipt-recovery { margin-top: 20px; padding-top: 12px; border-top: 1px dashed #c3b792; font-size: 11px; line-height: 1.8; }
+.receipt-recovery summary { cursor: pointer; font-weight: 600; }
+.ledger-list { padding: 0; margin: 10px 0; list-style: none; }
+.ledger-list li { display: flex; gap: 8px; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #d6ceb4; font-size: 11px; }
+.ledger-list li > div { min-width: 0; }
+.ledger-list li > div > span { display: block; color: #8e896b; font-size: 9px; margin-top: 5px; }
+.result-blocks { margin-top: 14px; }
+.result-model { font: 10px/1.6 var(--font-mono); color: #8b896c; overflow-wrap: anywhere; margin-bottom: 8px; }
+.search-results article { border-bottom: 1px solid #d1c7a6; padding: 11px 0; }
+.search-results h4 { font-size: 13px; line-height: 1.6; margin: 0; }
+.search-results h4 a { display: flex; gap: 7px; align-items: center; text-decoration: underline; }
+.search-results small { display: block; font: 9px var(--font-mono); margin-top: 8px; color: #8d8a6e; }
+.search-results p { font-size: 12px; line-height: 1.7; margin-top: 6px; }
+.video-moment { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px solid #d1c7a6; padding: 12px 0; font-size: 11px; }
+.video-moment strong { font: 13px var(--font-mono); }
+.registry-summary { display: flex; align-items: center; gap: 14px; padding: 14px 0; }
+.registry-summary strong { font: 35px Pixelify, monospace; color: #617444; }
+.registry-summary span { font-size: 10px; line-height: 1.8; color: #788063; }
+.resident-roster { margin-top: 12px; }
+.resident-roster > div { display: grid; grid-template-columns: 70px 1fr 1fr; gap: 10px; border-bottom: 1px solid #d7d0b5; padding: 10px 0; font-size: 11px; }
+.resident-roster code { font-size: 9px; color: #8a8c70; }
+.file-download { display: flex; gap: 12px; align-items: center; padding: 15px; border: 1px solid #b5bf97; background: #e2e8ca; }
+.file-download strong { display: block; font-size: 12px; }
+.file-download small { display: block; font: 10px var(--font-mono); color: #7a835f; margin-top: 5px; }
+@media (max-width: 767px) {
+  .task-panel { width: auto; padding: 0 17px; }
+  .quest-form select, .quest-form textarea, .quest-form input { font-size: 16px; }
+  .provider-heading h2 { font-size: 27px; }
+  .brand { font-size: 28px; }
+  .world-controls { gap: 5px; }
+  .world-action { min-width: 38px; width: 38px; }
+  .world-action > span { display: none; }
+  .resident-roster > div { grid-template-columns: 56px 1fr; }
+  .resident-roster code { grid-column: 1 / -1; }
+}

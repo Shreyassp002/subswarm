@@ -3,12 +3,14 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { BookOpen, ChevronRight, CircleAlert, Compass, HelpCircle, LoaderCircle, Map, RefreshCw, X } from "lucide-react";
-import type { Artifact, Job, JobInput, NetworkSnapshot, Provider, ProviderId, Session } from "@subswarm/shared";
+import { BookOpen, ChevronRight, CircleAlert, Compass, HelpCircle, LoaderCircle, Map, RefreshCw, Wallet, X } from "lucide-react";
+import type { Artifact, Job, JobInput, NetworkSnapshot, Provider, ProviderId, Session, WalletState, PaymentSettings } from "@subswarm/shared";
 import { api } from "@/lib/api";
 import { districts, providerOrder, statusLabel } from "@/lib/providers";
 import TaskPanel from "@/components/TaskPanel";
 import Journal from "@/components/Journal";
+import { formatTAO } from "@/lib/money";
+const WalletPanel = dynamic(() => import("@/components/WalletPanel"), { ssr: false });
 
 const WorldCanvas = dynamic(() => import("@/components/WorldCanvas"), {
   ssr: false,
@@ -19,6 +21,9 @@ const names: Record<ProviderId, string> = { saygm: "SayGM", desearch: "Desearch"
 const active = (job: Job | null) => job?.status === "queued" || job?.status === "running";
 
 export default function Village() {
+  const [walletOpen, setWalletOpen] = useState(false);
+  const [wallet, setWallet] = useState<WalletState | null>(null);
+  const [payments, setPayments] = useState<PaymentSettings | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [providers, setProviders] = useState<Provider[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -37,6 +42,13 @@ export default function Village() {
   const [submitting, setSubmitting] = useState(false);
   const [reload, setReload] = useState(0);
   const pollingJobId = active(currentJob) ? currentJob?.id : null;
+
+  const refreshWallet = useCallback(async (signal?: AbortSignal) => {
+    try {
+      const data = await api<{wallet: WalletState; payments: PaymentSettings}>("/v1/wallet", {signal});
+      if (!signal?.aborted) { setWallet(data.wallet); setPayments(data.payments); }
+    } catch { if (!signal?.aborted) { setWallet(null); setPayments(null); } }
+  }, []);
 
   const refreshRecords = useCallback(async (signal?: AbortSignal) => {
     const [jobData, artifactData] = await Promise.all([
@@ -66,6 +78,7 @@ export default function Village() {
         setProviders(providerData.providers);
         setCurrentJob(savedJobs.find((job) => active(job)) || null);
         setConnection("online");
+        void refreshWallet(controller.signal);
         try {
           const network = await api<NetworkSnapshot>("/v1/networks/testnet/298", { signal: controller.signal });
           if (!controller.signal.aborted) { setSnapshot(network); setChainUnavailable(false); }
@@ -80,7 +93,7 @@ export default function Village() {
     }
     void load();
     return () => controller.abort();
-  }, [reload, refreshRecords]);
+  }, [reload, refreshRecords, refreshWallet]);
 
   useEffect(() => {
     if (!pollingJobId) return;
@@ -101,6 +114,7 @@ export default function Village() {
           if (controller.signal.aborted) return;
           if (data.job.result?.snapshot) { setSnapshot(data.job.result.snapshot); setChainUnavailable(false); }
           setCurrentJob(data.job);
+          void refreshWallet(controller.signal);
         }
       } catch (failure) {
         if (controller.signal.aborted) return;
@@ -111,7 +125,7 @@ export default function Village() {
     }
     timer = setTimeout(poll, 1800);
     return () => { controller.abort(); clearTimeout(timer); };
-  }, [pollingJobId, refreshRecords]);
+  }, [pollingJobId, refreshRecords, refreshWallet]);
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -123,26 +137,33 @@ export default function Village() {
   }, []);
 
   function selectProvider(id: ProviderId) {
+    setWalletOpen(false);
     setSelectedProvider(id);
     setTaskError(null);
     setHelpOpen(false);
     setDirectoryOpen(false);
   }
 
+  function openWallet() {
+    setWalletOpen(true); setSelectedProvider(null); setDirectoryOpen(false); setHelpOpen(false);
+  }
+
   function openJournal(jobId: string | null = null) {
+    setWalletOpen(false);
     setJournalJobId(jobId);
     setJournalOpen(true);
     setDirectoryOpen(false);
     setHelpOpen(false);
   }
 
-  async function sendQuest(input: JobInput) {
+  async function sendQuest(input: JobInput, quoteId?: string) {
     if (submitting || active(currentJob) || connection !== "online") return;
     setSubmitting(true);
     setTaskError(null);
     try {
-      const data = await api<{ job: Job }>("/v1/jobs", { method: "POST", body: JSON.stringify(input) });
+      const data = await api<{ job: Job }>("/v1/jobs", { method: "POST", body: JSON.stringify({ ...input, ...(quoteId ? { quoteId } : {}) }) });
       setCurrentJob(data.job);
+      void refreshWallet();
       setJobs((previous) => [data.job, ...previous.filter((job) => job.id !== data.job.id)]);
       if (!active(data.job)) {
         await refreshRecords();
@@ -164,9 +185,10 @@ export default function Village() {
       <header className="topbar">
         <Link className="brand" href="/" aria-label="Subswarm village home" title={session ? `Exploring as ${session.name}` : "Subswarm"}>subswarm<span>.</span></Link>
         <nav className="world-controls" id="world-controls" aria-label="World controls">
-          <button className={`world-action ${directoryOpen ? "active" : ""}`} aria-label="Map" aria-expanded={directoryOpen} aria-controls="district-directory" onClick={() => { setDirectoryOpen((value) => !value); setSelectedProvider(null); setHelpOpen(false); }}><Map size={16} /><span>Map</span></button>
+          <button className={`world-action ${directoryOpen ? "active" : ""}`} aria-label="Map" aria-expanded={directoryOpen} aria-controls="district-directory" onClick={() => { setDirectoryOpen((value) => !value); setSelectedProvider(null); setHelpOpen(false); setWalletOpen(false); }}><Map size={16} /><span>Map</span></button>
           <button className="world-action" aria-label={`Journal${artifacts.length ? `, ${artifacts.length} saved outputs` : ""}`} onClick={() => openJournal()}><BookOpen size={16} /><span>Journal</span>{artifacts.length > 0 && <small>{artifacts.length}</small>}</button>
-          <button className={`world-action ${helpOpen ? "active" : ""}`} aria-label="Help" aria-expanded={helpOpen} onClick={() => { setHelpOpen((value) => !value); setDirectoryOpen(false); setSelectedProvider(null); }}><HelpCircle size={16} /><span>Help</span></button>
+          <button className={`world-action ${helpOpen ? "active" : ""}`} aria-label="Help" aria-expanded={helpOpen} onClick={() => { setHelpOpen((value) => !value); setDirectoryOpen(false); setSelectedProvider(null); setWalletOpen(false); }}><HelpCircle size={16} /><span>Help</span></button>
+          <button className={`world-action ${walletOpen ? "active" : ""}`} aria-label="Wallet" onClick={openWallet}><Wallet size={16} /><span>{wallet?.address ? `${formatTAO(wallet.availableRao)} test TAO` : "Wallet"}</span></button>
         </nav>
       </header>
       <main className="world-shell" aria-label="Interactive Subswarm village">
@@ -180,7 +202,8 @@ export default function Village() {
             return <button key={id} className="provider-row" onClick={() => selectProvider(id)} disabled={!provider} title={provider ? statusLabel[provider.status] : "Waiting for the village API"}><span className="district-number">{display.number}</span><Icon size={16} className="district-icon" /><span className="district-name">{provider?.name || names[id]}</span>{provider?.status === "ready" ? <i className="ready-dot" aria-label="Ready" /> : <ChevronRight size={12} className="district-chevron" />}</button>;
           })}</div>
         </aside>}
-        {selected && <TaskPanel key={selected.id} provider={selected} job={selectedJob} busy={busy} submitting={submitting} connected={connection === "online"} error={taskError} onSubmit={sendQuest} onClose={() => setSelectedProvider(null)} onOpenJournal={() => openJournal(selectedJob?.id || null)} />}
+        {selected && <TaskPanel key={selected.id} provider={selected} job={selectedJob} busy={busy} submitting={submitting} connected={connection === "online"} error={taskError} wallet={wallet} payments={payments} onOpenWallet={openWallet} onSubmit={sendQuest} onClose={() => setSelectedProvider(null)} onOpenJournal={() => openJournal(selectedJob?.id || null)} />}
+        {walletOpen && <WalletPanel onClose={() => setWalletOpen(false)} onChanged={() => void refreshWallet()} />}
         {selectedProvider && !selected && <aside className="task-panel parchment panel-enter" aria-labelledby="pending-provider-title"><div className="task-topline"><span>DISTRICT {districts[selectedProvider].number}</span><button className="icon-button ink" onClick={() => setSelectedProvider(null)} aria-label="Close district details"><X size={17} /></button></div><h2 id="pending-provider-title">{names[selectedProvider]}</h2><p className="provider-description">{connection === "loading" ? "Connecting to the village to check this provider..." : "Connect to the village to check this provider and send quests."}</p></aside>}
         {connection === "offline" && <div className="offline-message" role="alert"><CircleAlert size={15} /><div><p>{error}</p><button onClick={() => setReload((value) => value + 1)}><RefreshCw size={12} />Reconnect</button></div></div>}
         {helpOpen && <section className="help-panel parchment panel-enter" aria-labelledby="help-title"><div className="help-heading"><Compass size={19} /><h2 id="help-title">Exploring the village</h2><button className="icon-button ink" aria-label="Close explorer guide" onClick={() => setHelpOpen(false)}><X size={17} /></button></div><p>Use WASD or the arrow keys to walk. Click to move, click a district sign to open it, or press E near an entrance.</p><p>Send a quest to a provider and find the saved result in your journal. Town Hall reads the testnet registry without an API key.</p><p className="field-hint">Registered residents are chain participants, not a claim that they served a request. Your session is kept by a browser cookie.</p></section>}
