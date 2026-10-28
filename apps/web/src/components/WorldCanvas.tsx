@@ -56,7 +56,7 @@ export default function WorldCanvas({ selectedProvider, onSelectProvider, partic
         physics: { default: 'arcade', arcade: { gravity: { x: 0, y: 0 }, debug: false } },
         scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH },
         scene: [scene],
-        input: { keyboard: true, mouse: { preventDefaultWheel: true } },
+        input: { windowEvents: false, keyboard: true, mouse: { preventDefaultWheel: true } },
       })
       observer = new ResizeObserver(entries => {
         const { width, height } = entries[0].contentRect
@@ -76,13 +76,13 @@ export default function WorldCanvas({ selectedProvider, onSelectProvider, partic
 
   return (
     <div className="relative h-full min-h-0 w-full overflow-hidden bg-[#101b21]" aria-label="Interactive Subswarm village">
-      <div ref={host} className="absolute inset-0" role="application" aria-label="Village map. Use WASD or arrow keys to walk. Click a sign to open a provider. Press E near an entrance." />
+      <div ref={host} tabIndex={0} onPointerDownCapture={(event) => event.currentTarget.focus({ preventScroll: true })} className="absolute inset-0 outline-none" role="application" aria-label="Village map. Use WASD or arrow keys to walk. Click a sign to open a provider. Press E near an entrance." />
       {!ready && <div className="absolute inset-0 flex items-center justify-center bg-[#152429] text-sm text-[#e6dbc0]">{error ? 'The village could not load. Refresh to try again.' : 'Opening the village...'}</div>}
 
       <div className="absolute bottom-3 right-3 flex items-center overflow-hidden rounded-md border border-[#9ea382]/30 bg-[#172a2b]/80 text-[#e8dfc6] backdrop-blur-sm md:bottom-4 md:right-4">
         <button type="button" aria-label="Zoom out" onClick={() => controller.current?.zoom(-1)} className="h-8 w-8 cursor-pointer border-r border-[#9ea382]/20 hover:bg-[#41534a]">-</button>
         <button type="button" aria-label="Zoom in" onClick={() => controller.current?.zoom(1)} className="h-8 w-8 cursor-pointer border-r border-[#9ea382]/20 hover:bg-[#41534a]">+</button>
-        <button type="button" aria-label="Show the whole village" onClick={() => controller.current?.recenter()} className="h-8 cursor-pointer px-2.5 text-[10px] hover:bg-[#41534a]">FIT</button>
+        <button type="button" aria-label="Toggle whole village view" onClick={() => controller.current?.recenter()} className="h-8 cursor-pointer px-2.5 text-[10px] hover:bg-[#41534a]">FIT</button>
       </div>
 
       <span className="sr-only" aria-live="polite">{nearby ? `Press E to enter ${nearby}` : ''}</span>

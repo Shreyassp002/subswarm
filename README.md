@@ -25,8 +25,11 @@ Local environment files are already prepared in this checkout.
 
 Walk with WASD, arrows, or click a destination. Select a district sign or press
 E near its entrance. The directory, task details, and journal open on demand.
-The final environment artwork is undecided. The rejected generated background
-has been removed; interaction geometry and characters remain functional.
+Three connected neighborhoods fill a 3360 by 1888 world with an original
+evening background, open paths, clickable buildings, collision-aware walking,
+registered residents and an open fountain plaza.
+Use FIT to toggle the whole-map view; small screens follow the player.
+The Map menu provides keyboard-accessible access to every district.
 
 ## Integration status
 

@@ -12,3 +12,9 @@ Subswarm is a TypeScript pixel village for discovering and using Bittensor servi
 - Reuse appropriately licensed assets and keep their notices. Do not import unrelated contracts, pet ownership, or wallet code from source references.
 - Use concise conventional commit messages without AI attribution. Do not use Unicode em dashes or arrow characters.
 - Run focused tests for backend logic, then one build and browser check for an implementation slice. Avoid duplicate presentation tests.
+
+## World artwork and input
+
+- Never purchase assets. Use appropriately licensed free downloads or generate original artwork.
+- Keep town destinations separated by walkable space. Favor connected neighborhoods over fitting every building into one crowded view. Keep colors restrained and avoid sparkling water, dense microtexture and excessive decorative props.
+- Set Phaser `input.windowEvents` to `false`. Forwarding DOM overlay clicks to the world can select a building and unmount a quest form before it submits. Keep keyboard movement paused while interacting with inputs or modal dialogs.

@@ -8,8 +8,10 @@ The Tiled world and adapted Phaser integration come from
 Its README and root package declare the MIT license. A separate copyright and
 license file is not included in that revision. The original repository remains
 the source of that declaration. Unrelated logos, audio, contracts, and services
-are not included. The generated village background was removed and is not
-part of the active application.
+are not included. The source repository background is not included in the active application.
+The current evening town background was generated for this project, with new
+entrances and collision geometry matched to it. Its static artwork contains no
+provider output, participant identity, or simulated request evidence.
 
 ## Pixel art
 

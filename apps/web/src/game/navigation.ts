@@ -1,8 +1,9 @@
-import { COLLISIONS, WORLD_HEIGHT, WORLD_WIDTH } from './village'
+import { COLLISIONS, WORLD_HEIGHT, WORLD_WIDTH, WORLD_SCALE } from './village'
 
 export interface Point { x: number; y: number }
 
 const CELL = 16
+const CLEARANCE = 10 * WORLD_SCALE
 const COLS = WORLD_WIDTH / CELL
 const ROWS = WORLD_HEIGHT / CELL
 const key = (x: number, y: number) => y * COLS + x
@@ -12,7 +13,7 @@ const blocked = new Set<number>()
 for (let y = 0; y < ROWS; y++) {
   for (let x = 0; x < COLS; x++) {
     const p = point(key(x, y))
-    if (COLLISIONS.some(r => p.x > r.x - 8 && p.x < r.x + r.width + 8 && p.y > r.y - 8 && p.y < r.y + r.height + 8)) blocked.add(key(x, y))
+    if (COLLISIONS.some(r => p.x > r.x - CLEARANCE && p.x < r.x + r.width + CLEARANCE && p.y > r.y - CLEARANCE && p.y < r.y + r.height + CLEARANCE)) blocked.add(key(x, y))
   }
 }
 
