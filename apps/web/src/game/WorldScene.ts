@@ -66,8 +66,6 @@ export class WorldScene extends Phaser.Scene implements WorldController {
   private overview = false
   private zoomFactor = 1.15
   private fitZoom = 1
-  private lastPlayerX = 0
-  private lastPlayerY = 0
 
   constructor(bridge: WorldBridge) {
     super('SubswarmVillage')
@@ -349,13 +347,17 @@ export class WorldScene extends Phaser.Scene implements WorldController {
     }
     const length = Math.hypot(dx, dy)
     this.player.setVelocity(length ? dx / length * 132 * WORLD_SCALE : 0, length ? dy / length * 132 * WORLD_SCALE : 0)
-    const moving = Math.abs(this.player.x - this.lastPlayerX) + Math.abs(this.player.y - this.lastPlayerY) > 0.05
-    this.playerDirection = this.face(this.player, dx, dy, this.playerDirection, moving && length > 0)
+    const body = this.player.body as Phaser.Physics.Arcade.Body
+    // Render frames between fixed physics steps must not restart the walk cycle.
+    if (!length || this.physics.world.stepsLastFrame > 0) {
+      const movedX = body.position.x - body.prev.x
+      const movedY = body.position.y - body.prev.y
+      const moving = length > 0 && Math.hypot(movedX, movedY) > 0.05
+      this.playerDirection = this.face(this.player, movedX, movedY, this.playerDirection, moving)
+    }
     this.player.setDepth(this.player.y + 20)
     this.playerShadow.setPosition(this.player.x, this.player.y + 1).setDepth(this.player.y + 19)
     this.playerLabel.setPosition(this.player.x, this.player.y - 51 * WORLD_SCALE)
-    this.lastPlayerX = this.player.x
-    this.lastPlayerY = this.player.y
 
     const nearby = BUILDINGS.reduce<{ building: VillageBuilding | null; distance: number }>((best, building) => {
       const distance = Math.hypot(this.player.x - building.entrance.x, this.player.y - building.entrance.y)
