@@ -40,13 +40,36 @@ The Map menu provides keyboard-accessible access to every district.
 | Desearch | Web-search adapter | `DESEARCH_API_KEY` |
 | ChronoSeek | Video-search adapter | Reachable `CHRONOSEEK_URL`, optional key |
 | Chutes | Text-generation adapter | `CHUTES_API_KEY`, optional `CHUTES_MODEL` |
-| 404-GEN, Attelier, EveryFrame, Hippius | Discovery links | Execution not integrated |
+| 404-GEN | Text/image to SPZ or image to GLB | `GEN404_API_KEY`, image host allowlist |
+| Attelier, EveryFrame, Hippius | Discovery links | Execution not integrated |
 | Ridges | Discoverable district | Execution unavailable |
 
 Keys belong only in `services/api/.env`. No provider account is assumed to have
 free credit. Authenticated provider calls have not been verified without keys.
 Registered residents are chain participants, not evidence that a miner served
 a request or won a competition. Character animation never fabricates results.
+
+## Quests and testnet payments
+
+Each house presents the provider's supported input fields. Results render as
+text, search links, video time ranges, downloadable 3D files, or a participant
+roster. Jobs and outputs persist in the journal. Animated couriers gather when
+a request runs; they are decorative and do not imply miners competed for it.
+
+Paid quests use a prepaid service balance denominated in test TAO. Connect a
+Substrate extension wallet, sign a login message, review a testnet deposit,
+then confirm a fixed quote for a request. The service reserves that quote
+atomically, charges after saving a successful result, and releases it on
+failure. The operator separately supplies provider API credits. Providers do
+not automatically accept TAO, and no provider credits have been provisioned
+in this checkout.
+
+Deposits are disabled until a dedicated testnet receiver, starting block and
+integer-rao prices are configured. No mainnet transactions are supported.
+Unused credit remains in the service balance; on-chain withdrawals are not
+implemented. Wallet signatures and funded deposits still need a live browser
+check with a test account before public activation. See the
+[API payment setup](services/api/README.md#testnet-payment-setup).
 
 ## Chain tooling
 
@@ -58,8 +81,8 @@ uv venv .runtime/btcli
 uv pip install --python .runtime/btcli/bin/python bittensor==11.3.0
 ```
 
-Only fixed, allowlisted read-only queries are issued. No wallet, signer, chain
-transaction, new subnet, or hosted inference fleet is required.
+Only fixed, allowlisted read-only queries are issued. A registry scan needs no wallet, chain transaction, new subnet, or hosted
+inference fleet. Optional prepaid quest payments use a browser wallet on testnet.
 
 ## Workspaces
 
