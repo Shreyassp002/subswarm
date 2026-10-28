@@ -1,0 +1,21 @@
+{
+  "name": "subswarm",
+  "version": "1.0.0",
+  "description": "Explore Bittensor services through a living pixel village",
+  "scripts": {
+    "dev": "npm run dev --workspace @subswarm/web",
+    "dev:api": "npm run dev --workspace @subswarm/api",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "keywords": [],
+  "license": "ISC",
+  "type": "commonjs",
+  "packageManager": "npm@11.6.4",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "services/*",
+    "packages/*"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "name": "@subswarm/shared",
+  "version": "1.0.0",
+  "description": "",
+  "keywords": [],
+  "license": "ISC",
+  "type": "commonjs",
+  "types": "src/index.ts",
+  "private": true
+}
