@@ -48,6 +48,7 @@ test('ChronoSeek binds the protocol request and preserves only explicit gateway 
   }) as typeof fetch);
   const result = await execute({ providerId: 'chronoseek', prompt: 'find moment', videoUrl: 'https://example.com/video.mp4' });
   assert.match(result.text, /2.00s to 4.00s/);
+  assert.match(result.text, /Source video: https:\/\/example\.com\/video\.mp4/);
   assert.deepEqual(result.attribution?.uids, [4, 7]);
   assert.match(result.attribution?.note ?? '', /not independent execution verification/);
 });

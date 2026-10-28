@@ -157,7 +157,11 @@ export function createExecutor(config: Config, network: NetworkReader, fetcher: 
       const uids = data.miner_metadata?.selected_uids;
       return {
         title: 'ChronoSeek video moments',
-        text: data.results.length ? data.results.map((hit, index) => `${index + 1}. ${hit.start.toFixed(2)}s to ${hit.end.toFixed(2)}s | confidence ${(hit.confidence * 100).toFixed(1)}%`).join('\n') : 'The video gateway returned no matching moments.',
+        text: [
+          data.results.length ? data.results.map((hit, index) => `${index + 1}. ${hit.start.toFixed(2)}s to ${hit.end.toFixed(2)}s | confidence ${(hit.confidence * 100).toFixed(1)}%`).join('\n') : 'The video gateway returned no matching moments.',
+          '',
+          `Source video: ${input.videoUrl}`,
+        ].join('\n'),
         links: [{ title: 'Source video', url: input.videoUrl! }],
         ...(uids?.length ? { attribution: { kind: 'query-uids' as const, uids: [...new Set(uids)], note: 'Participant UIDs reported by the configured gateway for this request. This is gateway attribution, not independent execution verification.' } } : {}),
       };
