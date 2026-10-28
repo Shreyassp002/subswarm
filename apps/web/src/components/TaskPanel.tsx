@@ -1,23 +1,26 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { ArrowUpRight, Check, ChevronRight, CircleAlert, Compass, ExternalLink, KeyRound, LoaderCircle, ScrollText, X } from "lucide-react";
 import type { Job, JobInput, Provider } from "@subswarm/shared";
 import { districts, statusLabel } from "@/lib/providers";
 import { safeUrl } from "@/lib/api";
+import ResultEvidence from "@/components/ResultEvidence";
 
 interface Props {
   provider: Provider;
   job: Job | null;
   busy: boolean;
   submitting: boolean;
+  connected: boolean;
   error: string | null;
   onSubmit: (input: JobInput) => Promise<void>;
   onClose: () => void;
   onOpenJournal: () => void;
 }
 
-export default function TaskPanel({ provider, job, busy, submitting, error, onSubmit, onClose, onOpenJournal }: Props) {
+export default function TaskPanel({ provider, job, busy, submitting, connected, error, onSubmit, onClose, onOpenJournal }: Props) {
+  const panel = useRef<HTMLElement>(null);
   const [prompt, setPrompt] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [netuid, setNetuid] = useState(298);
@@ -27,15 +30,24 @@ export default function TaskPanel({ provider, job, busy, submitting, error, onSu
   const ready = provider.status === "ready" && !!provider.taskKind;
   const working = job?.status === "queued" || job?.status === "running";
   const website = safeUrl(provider.website);
+  const unavailableReason = provider.status === "needs_key"
+    ? "This provider is not connected to the village yet. Quests are unavailable until the village operator connects it."
+    : provider.reason || (provider.status === "external"
+      ? "This district is an external provider. Visit their site to explore what they offer."
+      : "This provider is not available for quests right now.");
+
+  useEffect(() => {
+    panel.current?.focus({ preventScroll: true });
+  }, []);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!ready || busy || submitting) return;
+    if (!ready || busy || submitting || !connected) return;
     await onSubmit({ providerId: provider.id, ...(isScan ? { netuid } : { prompt: prompt.trim(), ...(provider.taskKind === "video-search" ? { videoUrl: videoUrl.trim() } : {}) }) });
   }
 
   return (
-    <aside className="task-panel parchment panel-enter" aria-labelledby="provider-title">
+    <aside ref={panel} tabIndex={-1} className="task-panel parchment panel-enter" aria-labelledby="provider-title">
       <div className="task-topline"><span>DISTRICT {display.number}</span><button className="icon-button ink" onClick={onClose} aria-label="Close district details"><X size={17} /></button></div>
       <div className="provider-heading"><div className="provider-emblem" style={{ background: display.color }}><Icon size={24} strokeWidth={1.7} /></div><div><p className="eyebrow">{display.district}</p><h2 id="provider-title">{provider.name}</h2></div></div>
       <p className="provider-description">{provider.description}</p>
@@ -50,17 +62,18 @@ export default function TaskPanel({ provider, job, busy, submitting, error, onSu
             {provider.taskKind === "video-search" && <><label htmlFor="video-url">Video URL</label><input id="video-url" type="url" value={videoUrl} onChange={(event) => setVideoUrl(event.target.value)} placeholder="https://..." required disabled={busy} /></>}
             <p className="field-hint">Sent to {provider.name}. Results are saved in your journal.</p>
           </>}
-          <button className="primary-button" type="submit" disabled={busy || submitting || (!isScan && !prompt.trim())}>{submitting || working ? <><LoaderCircle size={16} className="spin" />{job?.status === "queued" ? "Quest queued" : "Working on your quest"}</> : <><Compass size={16} />{isScan ? "Explore the network" : "Send quest"}<ChevronRight size={16} /></>}</button>
+          <button className="primary-button" type="submit" disabled={busy || submitting || !connected || (!isScan && !prompt.trim())}>{submitting || working ? <><LoaderCircle size={16} className="spin" />{job?.status === "queued" ? "Quest queued" : "Working on your quest"}</> : <><Compass size={16} />{isScan ? "Explore the network" : "Send quest"}<ChevronRight size={16} /></>}</button>
+          {!connected && <p className="field-hint">Reconnect to the village before sending a quest.</p>}
           {busy && !working && <p className="field-hint">Another quest is underway. It will finish before you can send the next.</p>}
         </form>
       ) : (
-        <div className="connection-note"><div className="section-caption">{provider.status === "needs_key" ? <KeyRound size={17} /> : <Compass size={17} />}<h3>{provider.status === "needs_key" ? "One connection away" : provider.status === "external" ? "Continue the adventure" : "Taking a little rest"}</h3></div><p>{provider.reason || (provider.status === "needs_key" ? "Add this provider's API key to the API service environment, restart the service, then reconnect the village. Keys stay on the server." : provider.status === "external" ? "This district is an external provider. Visit their site to explore what they offer." : "This provider is not available for quests right now.")}</p>{provider.status === "needs_key" && <p className="field-hint">You can explore Town Hall without a key.</p>}{website && <a className="secondary-button" href={website} target="_blank" rel="noopener noreferrer">Visit {provider.name}<ArrowUpRight size={15} /></a>}</div>
+        <div className="connection-note"><div className="section-caption">{provider.status === "needs_key" ? <KeyRound size={17} /> : <Compass size={17} />}<h3>{provider.status === "needs_key" ? "Provider not connected" : provider.status === "external" ? "Available on the provider site" : "Unavailable in this village"}</h3></div><p>{unavailableReason}</p>{provider.status === "needs_key" && <p className="field-hint">You can explore Town Hall without a key.</p>}{website && <a className="secondary-button" href={website} target="_blank" rel="noopener noreferrer">Visit {provider.name}<ArrowUpRight size={15} /></a>}</div>
       )}
       {error && <div className="error-note" role="alert"><CircleAlert size={16} /><span>{error}</span></div>}
       {job && <div className={`job-result ${job.status}`} aria-live="polite">
         {working && <><div className="section-caption"><LoaderCircle className="spin" size={15} /><h3>{job.status === "queued" ? "Your quest is in the queue" : "A little intelligence at work"}</h3></div><p>The request is with {provider.name}. You can keep exploring while we wait.</p><div className="working-track"><span /></div></>}
         {job.status === "failed" && <><div className="section-caption"><CircleAlert size={16} /><h3>The quest hit a snag</h3></div><p>{job.error || "The provider could not complete this request. You can try again."}</p></>}
-        {job.status === "completed" && job.result && <><div className="section-caption"><Check size={17} /><h3>Quest complete</h3></div><h4>{job.result.title}</h4><p className="result-preview">{job.result.text}</p>{job.result.snapshot && <div className="snapshot-stat"><strong>{job.result.snapshot.totalParticipants}</strong><span>registered residents<br />Testnet {job.result.snapshot.netuid} / block {job.result.snapshot.block.toLocaleString()}</span></div>}{job.result.links?.slice(0, 3).map((link, index) => { const url = safeUrl(link.url); return url ? <a className="result-link" key={`${url}-${index}`} href={url} target="_blank" rel="noopener noreferrer">{link.title}<ExternalLink size={12} /></a> : null; })}<button className="text-button" onClick={onOpenJournal}>Read in your journal<ChevronRight size={14} /></button></>}
+        {job.status === "completed" && job.result && <><div className="section-caption"><Check size={17} /><h3>Quest complete</h3></div><h4>{job.result.title}</h4><p className="result-preview">{job.result.text}</p><ResultEvidence result={job.result} />{job.result.snapshot && <div className="snapshot-stat"><strong>{job.result.snapshot.totalParticipants}</strong><span>registered residents<br />Testnet {job.result.snapshot.netuid} / block {job.result.snapshot.block.toLocaleString()}</span></div>}{job.result.links?.slice(0, 3).map((link, index) => { const url = safeUrl(link.url); return url ? <a className="result-link" key={`${url}-${index}`} href={url} target="_blank" rel="noopener noreferrer">{link.title}<ExternalLink size={12} /></a> : null; })}<button className="text-button" onClick={onOpenJournal}>Read in your journal<ChevronRight size={14} /></button></>}
       </div>}
       <div className="panel-footnote"><span className="tiny-diamond" />Real providers. Real possibilities.</div>
     </aside>
