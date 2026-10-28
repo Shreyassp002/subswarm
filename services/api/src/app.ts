@@ -115,6 +115,15 @@ export function createApp(options: AppOptions = {}) {
     return c.json({ quote: store.createQuote(c.get('session').id, input, price) });
   });
 
+  app.get('/v1/providers/:id/residents', async (c) => {
+    const provider = providerCatalog(config, network.available).find(item => item.id === c.req.param('id'));
+    if (!provider?.network || provider.netuid === null) throw new ApiFailure('provider_not_found', 'This provider has no configured subnet registry.', 404);
+    store.consumeRegistryRead(c.get('session').id);
+    const snapshot = await network.snapshot(provider.network, provider.netuid);
+    if (snapshot.network !== provider.network || snapshot.netuid !== provider.netuid) throw new ApiFailure('invalid_chain_response', 'The resident registry does not match this provider subnet.', 502);
+    return c.json(snapshot);
+  });
+
   app.get('/v1/jobs', (c) => c.json({ jobs: store.listJobs(c.get('session').id) }));
   app.get('/v1/jobs/:id', (c) => {
     const job = store.findJob(c.get('session').id, c.req.param('id'));
@@ -173,7 +182,7 @@ export function createApp(options: AppOptions = {}) {
     if (!/^\d{1,5}$/.test(uid)) throw new ApiFailure('invalid_subnet', 'The subnet identifier must be a bounded integer.', 422);
     const netuid = Number(uid);
     assertKnownNetwork(networkName, netuid);
-    store.consumeRequest(c.get('session').id, config.maxDailyRequests);
+    store.consumeRegistryRead(c.get('session').id);
     return c.json(await network.snapshot(networkName, netuid));
   });
   app.notFound((c) => c.json({ error: { code: 'not_found', message: 'This API route does not exist.' } }, 404));

@@ -111,8 +111,8 @@ test('concurrent reservations and daily attempt caps are enforced without consum
   }
 });
 
-test('network reads reject unsupported identifiers and share the per-session daily cap', async () => {
-  const { app, store } = harness({ config: { ...readConfig({}), maxDailyRequests: 1 } });
+test('registry reads reject unsupported identifiers, have their own budget, and preserve quest quota', async () => {
+  const { app, store, drain } = harness({ config: { ...readConfig({}), maxDailyRequests: 1 } });
   try {
     const cookie = await openSession(app);
     for (const path of ['/v1/networks/testnet/123', '/v1/networks/other/298', '/v1/networks/__proto__/298', '/v1/networks/testnet/298.5']) {
@@ -121,7 +121,10 @@ test('network reads reject unsupported identifiers and share the per-session dai
     const read = await app.request('/v1/networks/testnet/298', { headers: { Cookie: cookie } });
     assert.equal(read.status, 200);
     assert.equal((await read.json()).source, 'live-chain');
+    for (let index = 1; index < 60; index++) assert.equal((await app.request('/v1/networks/testnet/298', { headers: { Cookie: cookie } })).status, 200);
     assert.equal((await app.request('/v1/networks/testnet/298', { headers: { Cookie: cookie } })).status, 429);
+    assert.equal((await submit(app, cookie, { providerId: 'network' })).status, 202);
+    await drain();
   } finally {
     store.close();
   }
@@ -161,4 +164,30 @@ test('generated file downloads enforce job ownership and retain the admitted pro
     assert.equal(response.headers.get('Content-Disposition'), 'attachment; filename="model.ply"');
     assert.equal(downloads, 1);
   } finally { store.close(); }
+});
+
+test('resident endpoints bind each house to its own network and reject mismatched rosters', async () => {
+  const requests: string[] = [];
+  const { app, store } = harness({ network: { available: true, snapshot: async (network, netuid) => {
+    requests.push(`${network}:${netuid}`);
+    return { ...snapshot, network, netuid };
+  } } });
+  try {
+    const cookie = await openSession(app);
+    for (const [id, network, netuid] of [['saygm', 'mainnet', 28], ['chronoseek', 'testnet', 298], ['chutes', 'mainnet', 64]] as const) {
+      const response = await app.request(`/v1/providers/${id}/residents`, { headers: { Cookie: cookie } });
+      assert.equal(response.status, 200);
+      const roster = await response.json();
+      assert.equal(roster.network, network);
+      assert.equal(roster.netuid, netuid);
+    }
+    assert.deepEqual(requests, ['mainnet:28', 'testnet:298', 'mainnet:64']);
+    assert.equal((await app.request('/v1/providers/unknown/residents', { headers: { Cookie: cookie } })).status, 404);
+    assert.equal((await app.request('/v1/providers/chutes/residents')).status, 401);
+  } finally { store.close(); }
+  const wrong = harness();
+  try {
+    const cookie = await openSession(wrong.app);
+    assert.equal((await wrong.app.request('/v1/providers/chutes/residents', { headers: { Cookie: cookie } })).status, 502);
+  } finally { wrong.store.close(); }
 });

@@ -74,6 +74,11 @@ export class Store {
         data TEXT NOT NULL
       );
       CREATE INDEX IF NOT EXISTS artifacts_owner ON artifacts(session_id);
+      CREATE TABLE IF NOT EXISTS registry_usage (
+        session_id TEXT PRIMARY KEY REFERENCES sessions(id),
+        window INTEGER NOT NULL,
+        count INTEGER NOT NULL
+      );
       CREATE TABLE IF NOT EXISTS daily_usage (
         session_id TEXT NOT NULL REFERENCES sessions(id),
         day TEXT NOT NULL,
@@ -138,6 +143,17 @@ export class Store {
 
   consumeRequest(sessionId: string, dailyLimit: number): void {
     this.db.transaction(() => this.consumeDailyRequest(sessionId, dailyLimit)).immediate();
+  }
+
+  consumeRegistryRead(sessionId: string): void {
+    this.db.transaction(() => {
+      const window = Math.floor(Date.now() / 60_000);
+      const row = this.db.prepare('SELECT window, count FROM registry_usage WHERE session_id = ?').get(sessionId) as { window: number; count: number } | undefined;
+      const count = row?.window === window ? row.count : 0;
+      if (count >= 60) throw new ApiFailure('registry_limit', 'The resident registry refresh limit was reached. Try again in a minute.', 429);
+      this.db.prepare('INSERT INTO registry_usage (session_id, window, count) VALUES (?, ?, ?) ON CONFLICT(session_id) DO UPDATE SET window=excluded.window, count=excluded.count')
+        .run(sessionId, window, count + 1);
+    }).immediate();
   }
 
   startJob(sessionId: string, id: string): Job | undefined {
