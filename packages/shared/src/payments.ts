@@ -16,6 +16,7 @@ export interface PaymentSettings {
 }
 
 export interface PaymentQuote {
+  storageRetentionDays?: number;
   id: string;
   providerId: string;
   amountRao: string;

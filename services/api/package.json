@@ -7,7 +7,9 @@
     "start": "node --env-file-if-exists=.env dist/index.js",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test test/*.test.ts",
-    "prepare:testnet": "tsx scripts/prepare-testnet.ts"
+    "prepare:testnet": "tsx scripts/prepare-testnet.ts",
+    "check:setup": "tsx --env-file-if-exists=.env scripts/check-setup.ts",
+    "price:quest": "tsx scripts/price-quest.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1159.0",

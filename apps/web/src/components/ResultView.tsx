@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import type { JobResult, ResultBlock } from '@subswarm/shared';
 import { Download, ExternalLink, Film, Trash2, Cloud } from 'lucide-react';
@@ -14,6 +14,12 @@ function timestamp(seconds: number) {
 function StoredFile({ block }: { block: Extract<ResultBlock, { type: 'stored-file' }> }) {
   const [state, setState] = useState<'ready' | 'confirm' | 'deleting' | 'deleted'>('ready');
   const [error, setError] = useState('');
+  const [expired, setExpired] = useState(() => !!block.expiresAt && Date.parse(block.expiresAt) <= Date.now());
+  useEffect(() => {
+    if (!block.expiresAt) return;
+    const timer = setTimeout(() => setExpired(true), Math.max(0, Date.parse(block.expiresAt) - Date.now()));
+    return () => clearTimeout(timer);
+  }, [block.expiresAt]);
   const url = downloadUrl(`/v1/jobs/${block.jobId}/files/storage`);
   async function remove() {
     setState('deleting'); setError('');
@@ -22,8 +28,10 @@ function StoredFile({ block }: { block: Extract<ResultBlock, { type: 'stored-fil
       setState('deleted');
     } catch (failure) { setError(failure instanceof Error ? failure.message : 'Deletion failed.'); setState('confirm'); }
   }
+  if (expired && block.expiresAt) return <p role="status">This file&apos;s storage period ended on {new Date(block.expiresAt).toLocaleDateString()}. Its receipt remains in your journal.</p>;
   if (state === 'deleted') return <p role="status">This file was deleted from storage.</p>;
   return <section className="stored-file"><Cloud size={24} /><div><strong>{block.name}</strong><small>{block.bytes < 1024 ? `${block.bytes} bytes` : `${(block.bytes / 1024).toFixed(1)} KiB`} / Private storage</small></div>
+    {block.expiresAt && <small>Download before {new Date(block.expiresAt).toLocaleString()}.</small>}
     {url && <a className="file-download" href={url}><Download size={16} />Download file</a>}
     <details className="quiet-details"><summary>File fingerprint</summary><code>{block.sha256}</code></details>
     {state === 'ready' ? <button className="text-button" onClick={() => setState('confirm')}><Trash2 size={14} />Delete stored file</button> : <div className="storage-confirm"><p>Delete this file? Its journal receipt will remain.</p><button className="secondary-button" disabled={state === 'deleting'} onClick={() => void remove()}>{state === 'deleting' ? 'Deleting...' : 'Delete permanently'}</button><button className="text-button" disabled={state === 'deleting'} onClick={() => setState('ready')}>Keep file</button></div>}

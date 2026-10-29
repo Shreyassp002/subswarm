@@ -1,3 +1,4 @@
+import { STORAGE_RETENTION_DAYS } from './storage-policy.js';
 import type { Provider, ProviderInputField } from '@subswarm/shared';
 import type { Config } from './config.js';
 
@@ -105,9 +106,9 @@ export function providerCatalog(config: Config, networkAvailable: boolean): Prov
       id: 'hippius', name: 'Hippius', netuid: 75, network: 'mainnet', category: 'Storage',
       description: 'Store and retrieve files with Drive or S3-compatible object storage.',
       status: config.hippiusAccessKey && config.hippiusSecretKey && config.hippiusBucket ? 'ready' : 'needs_key', taskKind: 'storage', attribution: 'none', website: 'https://console.hippius.com', docsUrl: 'https://docs.hippius.com/',
-      inputs: [{ key: 'fileBase64', type: 'file', label: 'Pack a file', required: true, description: 'Up to 256 KiB. Private to this workspace; download or delete it from the journal.' }],
+      inputs: [{ key: 'fileBase64', type: 'file', label: 'Pack a file', required: true, description: `Up to 256 KiB, kept for ${STORAGE_RETENTION_DAYS} days. Download or delete it from the journal.` }],
       inputDescription: 'Upload a small file into the village storage account.',
-      outputDescription: 'A private stored file with a download and delete action. Storage lasts until you or the operator delete it; keep your own backup.',
+      outputDescription: `A private file stored for ${STORAGE_RETENTION_DAYS} days with download and delete controls. Keep your own backup.`,
       reason: config.hippiusAccessKey && config.hippiusSecretKey && config.hippiusBucket ? undefined : 'Hippius S3 access keys and a private bucket are required.',
     },
     {

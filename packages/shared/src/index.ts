@@ -69,7 +69,7 @@ export interface JobInput {
 }
 
 export type ResultBlock =
-  | { type: 'stored-file'; name: string; bytes: number; sha256: string; jobId: string }
+  | { type: 'stored-file'; name: string; bytes: number; sha256: string; jobId: string; expiresAt?: string }
   | { type: 'media'; items: { title: string; url: string; kind: 'image' | 'video' | 'audio'; mimeType: string }[] }
   | { type: 'text'; text: string; model?: string }
   | { type: 'search-results'; items: { title: string; snippet: string; url: string }[] }
@@ -80,6 +80,7 @@ export type ResultBlock =
 export interface JobResult {
   storageSha256?: string;
   storageVersionId?: string;
+  storageExpiresAt?: string;
   mediaOutputs?: { url: string; kind: 'image' | 'video' | 'audio'; mimeType: string; sha256: string; authentication: 'Bearer' }[];
   title: string;
   text: string;

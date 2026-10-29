@@ -1,3 +1,4 @@
+import { STORAGE_RETENTION_DAYS } from './storage-policy.js';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
@@ -227,6 +228,15 @@ export class Store {
     }).immediate();
   }
 
+  expiredStorage(now = new Date()): { sessionId: string; job: Job }[] {
+    const rows = this.db.prepare(`SELECT session_id, data FROM jobs WHERE status = 'completed'
+      AND json_extract(data, '$.providerId') = 'hippius'
+      AND json_extract(data, '$.storageDeletedAt') IS NULL
+      AND json_extract(data, '$.result.storageExpiresAt') <= ?
+      ORDER BY json_extract(data, '$.result.storageExpiresAt') LIMIT 20`).all(now.toISOString()) as (JobRow & { session_id: string })[];
+    return rows.map(row => ({ sessionId: row.session_id, job: JSON.parse(row.data) as Job }));
+  }
+
   markStorageDeleted(sessionId: string, id: string): Job {
     return this.db.transaction(() => {
       const job = this.findJob(sessionId, id);
@@ -348,7 +358,7 @@ export class Store {
       if (!account) throw new ApiFailure('wallet_required', 'Connect and verify your wallet before requesting paid work.', 401);
       if (rao(amountRao) === 0n) throw new ApiFailure('invalid_amount', 'A paid request price must be greater than zero.', 422);
       const expires = Date.now() + 5 * 60_000;
-      const quote = { id: randomUUID(), providerId: input.providerId, amountRao, expiresAt: new Date(expires).toISOString() };
+      const quote: PaymentQuote = { id: randomUUID(), providerId: input.providerId, amountRao, expiresAt: new Date(expires).toISOString(), ...(input.providerId === 'hippius' ? { storageRetentionDays: STORAGE_RETENTION_DAYS } : {}) };
       this.db.prepare("DELETE FROM payment_quotes WHERE state = 'quoted' AND expires_at <= ?").run(Date.now());
       this.db.prepare("INSERT INTO payment_quotes (id, session_id, account, input_hash, provider_id, amount, expires_at, state) VALUES (?, ?, ?, ?, ?, ?, ?, 'quoted')")
         .run(quote.id, sessionId, account, inputHash(input), input.providerId, amountRao, expires);

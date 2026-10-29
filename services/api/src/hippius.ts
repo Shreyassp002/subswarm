@@ -1,3 +1,4 @@
+import { STORAGE_RETENTION_DAYS } from './storage-policy.js';
 import { createHash } from 'node:crypto';
 import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import type { Config } from './config.js';
@@ -28,8 +29,9 @@ export function createHippiusStorage(config: Config, client = new S3Client({
       const stored = await client.send(new PutObjectCommand({ ...object, Body: bytes, ContentType: 'application/octet-stream', Metadata: { sha256 } }), { abortSignal: AbortSignal.timeout(30_000) });
       versionId = stored.VersionId;
     } catch { throw new ApiFailure('storage_upload_failed', 'The upload could not be confirmed. Retry after checking storage access and credit.', 502); }
-    return { title: input.fileName, text: `${input.fileName} stored privately (${bytes.length} bytes).`, storageSha256: sha256, storageVersionId: versionId,
-      blocks: [{ type: 'stored-file', name: input.fileName, bytes: bytes.length, sha256, jobId: context.jobId }] };
+    const expiresAt = new Date(Date.now() + STORAGE_RETENTION_DAYS * 86400000).toISOString();
+    return { title: input.fileName, text: `${input.fileName} stored privately (${bytes.length} bytes).`, storageSha256: sha256, storageVersionId: versionId, storageExpiresAt: expiresAt,
+      blocks: [{ type: 'stored-file', name: input.fileName, bytes: bytes.length, sha256, jobId: context.jobId, expiresAt }] };
   };
   async function download(id: string, name: string, sha256: string, versionId?: string): Promise<Response> {
     try {

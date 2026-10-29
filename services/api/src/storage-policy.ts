@@ -1,0 +1,1 @@
+export const STORAGE_RETENTION_DAYS = 7;

@@ -1,3 +1,4 @@
+import { createStorageCleanup } from './storage-retention.js';
 import { downloadAttelierResult } from './attelier.js';
 import { createHippiusStorage } from './hippius.js';
 import { Hono } from 'hono';
@@ -37,6 +38,7 @@ export function createApp(options: AppOptions = {}) {
   const execute = options.execute ?? createExecutor(config, network);
   const downloadMedia = options.downloadMedia ?? downloadAttelierResult;
   const storage = options.storage ?? createHippiusStorage(config);
+  const cleanupStorage = createStorageCleanup(store, storage);
   const downloadModel = options.downloadModel ?? download404Result;
   const deposits = options.deposits ?? new TestnetDepositReader();
   const payment = paymentSettings(config.payments);
@@ -159,6 +161,7 @@ export function createApp(options: AppOptions = {}) {
   };
   app.get('/v1/jobs/:id/files/storage', async (c) => {
     const job = storedFile(c.get('session').id, c.req.param('id'));
+    if (job.result?.storageExpiresAt && Date.parse(job.result.storageExpiresAt) <= Date.now()) throw new ApiFailure('artifact_expired', 'This file reached the end of its storage period.', 410);
     if (job.storageDeletedAt) throw new ApiFailure('artifact_deleted', 'This stored file was deleted.', 404);
     store.consumeRequest(c.get('session').id, config.maxDailyRequests);
     return storage.download(job.id, job.input.fileName!, job.result!.storageSha256!, job.result!.storageVersionId);
@@ -226,5 +229,5 @@ export function createApp(options: AppOptions = {}) {
     console.error('API request failed:', error.name);
     return c.json({ error: { code: 'internal_error', message: 'The server could not complete this request.' } }, 500);
   });
-  return { app, store, async drain() { await Promise.allSettled([...pending]); } };
+  return { app, store, cleanupStorage, async drain() { await Promise.allSettled([...pending]); } };
 }
