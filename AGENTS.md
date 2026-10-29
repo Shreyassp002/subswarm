@@ -1,6 +1,6 @@
 # Subswarm
 
-Subswarm is a TypeScript pixel village for discovering and using Bittensor services.
+Subswarm provides a professional workspace and a pixel village for discovering and using Bittensor services.
 
 - Use npm workspaces. Frontend is Next.js with a client-only Phaser world. API and jobs run in the separate Node service.
 - Keep the web export static. Do not add Next route handlers, server actions, or frontend provider credentials.
@@ -19,3 +19,10 @@ Subswarm is a TypeScript pixel village for discovering and using Bittensor servi
 - Never purchase assets. Use appropriately licensed free downloads or generate original artwork.
 - Keep town destinations separated by walkable space. Favor connected neighborhoods over fitting every building into one crowded view. Keep colors restrained and avoid sparkling water, dense microtexture and excessive decorative props.
 - Set Phaser `input.windowEvents` to `false`. Forwarding DOM overlay clicks to the world can select a building and unmount a quest form before it submits. Keep keyboard movement paused while interacting with inputs or modal dialogs.
+
+## Product modes
+
+- `/` is the branded landing page, `/app/` is the professional workspace, and `/village/` is the existing pixel world.
+- The landing and workspace share the blue, white, pink and yellow visual identity. The village retains its own illustrated pixel theme.
+- Both modes share the provider catalogue, request forms, session, wallet, pricing and saved results. Never duplicate payment or provider execution logic for a visual mode.
+- Provide searchable subnet discovery in both modes. Use verified provider marks for identification; retain sources and do not imply endorsement or invent execution attribution.

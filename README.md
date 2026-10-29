@@ -1,7 +1,7 @@
 # Subswarm
 
-A playable world for discovering Bittensor services, submitting requests, and
-collecting useful outputs in a persistent journal.
+A workspace and a playable world for discovering Bittensor services, submitting
+requests, and keeping useful outputs in one shared library.
 
 ## Run locally
 
@@ -20,7 +20,8 @@ npm run dev:api
 npm run dev
 ```
 
-Village: `http://localhost:3000`. API: `http://localhost:4100`.
+Landing: `http://localhost:3000/`. Workspace: `http://localhost:3000/app/`.
+Village: `http://localhost:3000/village/`. API: `http://localhost:4100`.
 Local environment files are already prepared in this checkout.
 
 Walk with WASD, arrows, or click a destination. Select a district sign or press
@@ -30,6 +31,24 @@ evening background, open paths, clickable buildings, collision-aware walking,
 registered residents and an open fountain plaza.
 Use FIT to toggle the whole-map view; small screens follow the player.
 The Map menu provides keyboard-accessible access to every district.
+
+## Two ways to use Subswarm
+
+The landing and professional workspace share a blue, white, pink and yellow
+visual identity. The village retains its separate pixel-art theme. Both use the
+same API session, provider catalogue, request forms, wallet and saved outputs.
+Switching modes does not create a second account or payment balance.
+
+The workspace supports subnet search by name, number or capability, category
+filters, connection status, provider-specific inputs, participant rosters,
+request progress, private outputs, file controls, wallet activity and receipt
+recovery. The village directory has the same search. Provider deep links use
+`/app/?subnet=chutes` or `/village/?subnet=chutes`.
+
+The directory covers the integrated catalogue, not every Bittensor subnet.
+Connected status means configured, not a guarantee of provider credit or uptime.
+External-only integrations remain labelled. Decorative landing animation does
+not represent live traffic or provider location.
 
 ## Integration status
 
