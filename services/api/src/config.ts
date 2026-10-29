@@ -16,6 +16,13 @@ export interface Config {
   desearchApiKey?: string;
   chronoseekUrl?: string;
   chronoseekApiKey?: string;
+  attelierApiKey?: string;
+  attelierModel?: string;
+  attelierParameters?: Record<string, unknown>;
+  attelierMaxUsdMicros: number;
+  hippiusAccessKey?: string;
+  hippiusSecretKey?: string;
+  hippiusBucket?: string;
   gen404ApiKey?: string;
   gen404ImageOrigins?: string[];
   maxConcurrentJobs: number;
@@ -37,7 +44,7 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): Config {
     throw new Error('CHRONOSEEK_URL must use http or https.');
   }
   const pricesRao: Record<string, string> = {};
-  for (const id of ['saygm', 'chutes', 'desearch', 'chronoseek', '404gen']) {
+  for (const id of ['saygm', 'chutes', 'desearch', 'chronoseek', '404gen', 'attelier', 'hippius']) {
     const price = env[`TAO_PRICE_${id.toUpperCase()}_RAO`]?.trim();
     if (price) {
       if (rao(price) === 0n) throw new Error('Paid request prices must be greater than zero.');
@@ -52,6 +59,13 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): Config {
       throw new Error('GEN404_IMAGE_ORIGINS must contain comma-separated exact public HTTPS origins without ports or paths.');
     }
   }
+  let attelierParameters: Record<string, unknown> = {};
+  if (env.ATTELIER_PARAMETERS_JSON?.trim()) {
+    attelierParameters = z.record(z.string(), z.unknown()).parse(JSON.parse(env.ATTELIER_PARAMETERS_JSON));
+    if (JSON.stringify(attelierParameters).length > 8000) throw new Error('ATTELIER_PARAMETERS_JSON must be at most 8 KiB.');
+  }
+  const hippiusBucket = env.HIPPIUS_BUCKET?.trim() || undefined;
+  if (hippiusBucket && !/^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$/.test(hippiusBucket)) throw new Error('HIPPIUS_BUCKET must be an S3 bucket name.');
   if (receiver) accountId(receiver);
   if (env.TAO_PAYMENTS_ENABLED && !['true', 'false'].includes(env.TAO_PAYMENTS_ENABLED)) throw new Error('TAO_PAYMENTS_ENABLED must be true or false.');
   return {
@@ -70,6 +84,13 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): Config {
     chronoseekApiKey: env.CHRONOSEEK_API_KEY?.trim() || undefined,
     gen404ApiKey: env.GEN404_API_KEY?.trim() || undefined,
     gen404ImageOrigins,
+    attelierApiKey: env.ATTELIER_API_KEY?.trim() || undefined,
+    attelierModel: env.ATTELIER_MODEL?.trim() || undefined,
+    attelierParameters,
+    attelierMaxUsdMicros: positiveInteger(env.ATTELIER_MAX_USD_MICROS, 1_000_000, 10_000_000),
+    hippiusAccessKey: env.HIPPIUS_ACCESS_KEY_ID?.trim() || undefined,
+    hippiusSecretKey: env.HIPPIUS_SECRET_ACCESS_KEY?.trim() || undefined,
+    hippiusBucket,
     maxConcurrentJobs: positiveInteger(env.MAX_CONCURRENT_JOBS, 2, 10),
     maxDailyRequests: positiveInteger(env.MAX_DAILY_REQUESTS, 40, 1000),
     maxPaidDailyRequests: positiveInteger(env.MAX_PAID_DAILY_REQUESTS, 20, 1000),

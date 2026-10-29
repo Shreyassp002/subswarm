@@ -180,18 +180,31 @@ export class Store {
     }).immediate();
   }
 
+  recordProviderQuote(sessionId: string, id: string, providerQuoteId: string): void {
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(providerQuoteId)) throw new Error('Invalid provider quote identifier');
+    this.db.transaction(() => {
+      const job = this.findJob(sessionId, id);
+      if (!job || !['queued', 'running'].includes(job.status)) return;
+      if (job.providerQuoteId && job.providerQuoteId !== providerQuoteId) throw new Error('Provider quote identity cannot change');
+      job.providerQuoteId = providerQuoteId;
+      job.updatedAt = new Date().toISOString();
+      this.db.prepare('UPDATE jobs SET data = ? WHERE id = ?').run(JSON.stringify(job), id);
+    }).immediate();
+  }
+
   finishJob(sessionId: string, id: string, result: JobResult): void {
     this.db.transaction(() => {
       const job = this.findJob(sessionId, id);
       if (!job || job.status !== 'running') return;
       const now = new Date().toISOString();
       job.status = 'completed';
+      delete job.input.fileBase64;
       job.updatedAt = now;
       job.result = result;
       const artifact: Artifact = {
         id: randomUUID(), jobId: id, providerId: job.providerId,
         title: result.title, content: result.text,
-        type: job.kind === '3d' ? '3d' : job.kind === 'network-scan' ? 'network-report' : job.kind === 'video-search' ? 'video' : job.kind === 'search' ? 'search' : 'text',
+        type: job.kind === 'media' ? 'media' : job.kind === 'storage' ? 'storage' : job.kind === '3d' ? '3d' : job.kind === 'network-scan' ? 'network-report' : job.kind === 'video-search' ? 'video' : job.kind === 'search' ? 'search' : 'text',
         createdAt: now,
       };
       this.finishPayment(id, true);
@@ -206,10 +219,32 @@ export class Store {
       const job = this.findJob(sessionId, id);
       if (!job || !['queued', 'running'].includes(job.status)) return;
       job.status = 'failed';
+      delete job.input.fileBase64;
       job.updatedAt = new Date().toISOString();
       job.error = message;
       this.finishPayment(id, false);
       this.db.prepare("UPDATE jobs SET status = 'failed', data = ? WHERE id = ?").run(JSON.stringify(job), id);
+    }).immediate();
+  }
+
+  markStorageDeleted(sessionId: string, id: string): Job {
+    return this.db.transaction(() => {
+      const job = this.findJob(sessionId, id);
+      if (!job || job.providerId !== 'hippius' || job.status !== 'completed') throw new ApiFailure('artifact_not_found', 'This file was not found in your workspace.', 404);
+      job.storageDeletedAt ??= new Date().toISOString();
+      job.updatedAt = job.storageDeletedAt;
+      const row = this.db.prepare('SELECT data FROM artifacts WHERE job_id = ? AND session_id = ?').get(id, sessionId) as JobRow | undefined;
+      if (row) {
+        const artifact = JSON.parse(row.data) as Artifact;
+        artifact.content = `${job.input.fileName} was deleted from storage.`;
+        this.db.prepare('UPDATE artifacts SET data = ? WHERE job_id = ? AND session_id = ?').run(JSON.stringify(artifact), id, sessionId);
+      }
+      if (job.result) {
+        job.result.text = `${job.input.fileName} was deleted from storage.`;
+        job.result.blocks = [{ type: 'text', text: job.result.text }];
+      }
+      this.db.prepare('UPDATE jobs SET data = ? WHERE id = ?').run(JSON.stringify(job), id);
+      return job;
     }).immediate();
   }
 

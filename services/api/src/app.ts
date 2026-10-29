@@ -1,3 +1,5 @@
+import { downloadAttelierResult } from './attelier.js';
+import { createHippiusStorage } from './hippius.js';
 import { Hono } from 'hono';
 import type { Context } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
@@ -24,6 +26,8 @@ interface AppOptions {
   execute?: JobExecutor;
   deposits?: DepositReader;
   downloadModel?: typeof download404Result;
+  downloadMedia?: typeof downloadAttelierResult;
+  storage?: ReturnType<typeof createHippiusStorage>;
 }
 
 export function createApp(options: AppOptions = {}) {
@@ -31,6 +35,8 @@ export function createApp(options: AppOptions = {}) {
   const store = options.store ?? new Store(config.databasePath);
   const network = options.network ?? new BtcliNetworkReader(config.btcliBin);
   const execute = options.execute ?? createExecutor(config, network);
+  const downloadMedia = options.downloadMedia ?? downloadAttelierResult;
+  const storage = options.storage ?? createHippiusStorage(config);
   const downloadModel = options.downloadModel ?? download404Result;
   const deposits = options.deposits ?? new TestnetDepositReader();
   const payment = paymentSettings(config.payments);
@@ -48,7 +54,7 @@ export function createApp(options: AppOptions = {}) {
     await next();
   });
   app.use('/v1/*', cors({ origin: config.webOrigin, credentials: true, allowMethods: ['GET', 'POST', 'OPTIONS'], allowHeaders: ['Content-Type'], maxAge: 600 }));
-  app.use('/v1/*', bodyLimit({ maxSize: 16 * 1024, onError: (c) => c.json({ error: { code: 'body_too_large', message: 'Request bodies must be at most 16 KiB.' } }, 413) }));
+  app.use('/v1/*', (c, next) => bodyLimit({ maxSize: ['/v1/jobs', '/v1/quotes'].includes(c.req.path) ? 360 * 1024 : 16 * 1024, onError: (ctx) => ctx.json({ error: { code: 'body_too_large', message: 'The request exceeds the supported size.' } }, 413) })(c, next));
 
   app.get('/health', (c) => c.json({ status: 'ok' }));
   app.get('/v1/session', (c) => {
@@ -138,6 +144,35 @@ export function createApp(options: AppOptions = {}) {
     store.consumeRequest(c.get('session').id, config.maxDailyRequests);
     return downloadModel(config, job.result.providerTaskId, job.input.model === '404-mesh' ? '404-mesh' : '404-3dgs');
   });
+  app.get('/v1/jobs/:id/files/media/:index', async (c) => {
+    const job = store.findJob(c.get('session').id, c.req.param('id'));
+    const index = c.req.param('index');
+    const output = /^[0-7]$/.test(index) ? job?.result?.mediaOutputs?.[Number(index)] : undefined;
+    if (!job || job.providerId !== 'attelier' || job.status !== 'completed' || !job.result?.providerTaskId || !output) throw new ApiFailure('artifact_not_found', 'This media was not found in your workspace.', 404);
+    store.consumeRequest(c.get('session').id, config.maxDailyRequests);
+    return downloadMedia(config, job.result.providerTaskId, output);
+  });
+  const storedFile = (sessionId: string, id: string) => {
+    const job = store.findJob(sessionId, id);
+    if (!job || job.providerId !== 'hippius' || job.status !== 'completed' || !job.result?.storageSha256 || !job.input.fileName) throw new ApiFailure('artifact_not_found', 'This file was not found in your workspace.', 404);
+    return job;
+  };
+  app.get('/v1/jobs/:id/files/storage', async (c) => {
+    const job = storedFile(c.get('session').id, c.req.param('id'));
+    if (job.storageDeletedAt) throw new ApiFailure('artifact_deleted', 'This stored file was deleted.', 404);
+    store.consumeRequest(c.get('session').id, config.maxDailyRequests);
+    return storage.download(job.id, job.input.fileName!, job.result!.storageSha256!, job.result!.storageVersionId);
+  });
+  app.post('/v1/jobs/:id/files/storage/delete', async (c) => {
+    validate(z.object({}).strict(), await parseBody(c));
+    const sessionId = c.get('session').id;
+    const job = storedFile(sessionId, c.req.param('id'));
+    if (!job.storageDeletedAt) {
+      store.consumeRequest(sessionId, config.maxDailyRequests);
+      await storage.remove(job.id, job.result!.storageVersionId);
+    }
+    return c.json({ job: store.markStorageDeleted(sessionId, job.id) });
+  });
   app.post('/v1/jobs', async (c) => {
     if (!c.req.header('Content-Type')?.toLowerCase().startsWith('application/json')) throw new ApiFailure('invalid_content_type', 'Use an application/json request body.', 400);
     let raw: unknown;
@@ -164,7 +199,7 @@ export function createApp(options: AppOptions = {}) {
     const run = Promise.resolve().then(async () => {
       if (!store.startJob(sessionId, job.id)) return;
       try {
-        store.finishJob(sessionId, job.id, await execute(input, { jobId: job.id, onProviderTaskCreated: (id) => store.recordProviderTask(sessionId, job.id, id) }));
+        store.finishJob(sessionId, job.id, await execute(input, { jobId: job.id, onProviderQuoteCreated: (id) => store.recordProviderQuote(sessionId, job.id, id), onProviderTaskCreated: (id) => store.recordProviderTask(sessionId, job.id, id) }));
       } catch (error) {
         store.failJob(sessionId, job.id, error instanceof ApiFailure ? error.message : 'The job failed unexpectedly. Submit a new job to retry.');
       }

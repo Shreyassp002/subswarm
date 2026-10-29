@@ -1,10 +1,10 @@
 export type ProviderId = 'network' | 'saygm' | 'desearch' | 'chronoseek' | 'chutes' | '404gen' | 'attelier' | 'everyframe' | 'hippius' | 'ridges';
-export type TaskKind = 'network-scan' | 'text' | 'search' | 'video-search' | '3d';
+export type TaskKind = 'network-scan' | 'text' | 'search' | 'video-search' | '3d' | 'media' | 'storage';
 export type JobStatus = 'queued' | 'running' | 'completed' | 'failed';
 
 export interface ProviderInputField {
-  key: 'prompt' | 'videoUrl' | 'netuid' | 'maxTokens' | 'topK' | 'start' | 'model' | 'inputImageUrl';
-  type: 'textarea' | 'url' | 'number' | 'select';
+  key: 'prompt' | 'videoUrl' | 'netuid' | 'maxTokens' | 'topK' | 'start' | 'model' | 'inputImageUrl' | 'fileName' | 'fileBase64';
+  type: 'textarea' | 'url' | 'number' | 'select' | 'text' | 'file';
   label: string;
   description?: string;
   required: boolean;
@@ -64,16 +64,23 @@ export interface JobInput {
   start?: number;
   model?: '404-3dgs' | '404-mesh';
   inputImageUrl?: string;
+  fileName?: string;
+  fileBase64?: string;
 }
 
 export type ResultBlock =
+  | { type: 'stored-file'; name: string; bytes: number; sha256: string; jobId: string }
+  | { type: 'media'; items: { title: string; url: string; kind: 'image' | 'video' | 'audio'; mimeType: string }[] }
   | { type: 'text'; text: string; model?: string }
   | { type: 'search-results'; items: { title: string; snippet: string; url: string }[] }
   | { type: 'video-moments'; sourceUrl: string; items: { start: number; end: number; confidence: number }[] }
   | { type: 'participants'; snapshot: NetworkSnapshot }
-  | { type: 'files'; items: { title: string; url: string; format: 'spz' | 'glb' }[] };
+  | { type: 'files'; items: { title: string; url: string; format: 'spz' | 'glb' | 'file' }[] };
 
 export interface JobResult {
+  storageSha256?: string;
+  storageVersionId?: string;
+  mediaOutputs?: { url: string; kind: 'image' | 'video' | 'audio'; mimeType: string; sha256: string; authentication: 'Bearer' }[];
   title: string;
   text: string;
   blocks?: ResultBlock[];
@@ -94,6 +101,8 @@ export interface Job {
   result: JobResult | null;
   providerTaskId?: string;
   error: string | null;
+  providerQuoteId?: string;
+  storageDeletedAt?: string;
 }
 
 export interface Artifact {
@@ -102,7 +111,7 @@ export interface Artifact {
   providerId: ProviderId;
   title: string;
   content: string;
-  type: 'text' | 'network-report' | 'search' | 'video' | '3d';
+  type: 'text' | 'network-report' | 'search' | 'video' | '3d' | 'media' | 'storage';
   createdAt: string;
 }
 

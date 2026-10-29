@@ -4,6 +4,8 @@ import type { JobInput, JobResult } from '@subswarm/shared';
 import type { Config } from './config.js';
 import { ApiFailure } from './errors.js';
 import type { NetworkReader } from './network.js';
+import { createAttelierExecutor } from './attelier.js';
+import { createHippiusStorage } from './hippius.js';
 import { create404Executor } from './gen404.js';
 
 export { providerCatalog } from './provider-catalog.js';
@@ -33,6 +35,7 @@ const chronoSchema = z.object({
 
 export interface JobExecutionContext {
   jobId: string;
+  onProviderQuoteCreated?: (id: string) => void;
   onProviderTaskCreated?: (id: string) => void;
 }
 
@@ -86,8 +89,12 @@ function parseResponse<T>(schema: z.ZodType<T>, raw: unknown): T {
 }
 
 export function createExecutor(config: Config, network: NetworkReader, fetcher: typeof fetch = fetch): JobExecutor {
+  const executeAttelier = createAttelierExecutor(config, fetcher);
+  const storage = createHippiusStorage(config);
   const execute404 = create404Executor(config, fetcher);
   return async (input, context) => {
+    if (input.providerId === 'attelier') return executeAttelier(input, context);
+    if (input.providerId === 'hippius') return storage.execute(input, context);
     if (input.providerId === '404gen') return execute404(input, context);
     if (input.providerId === 'network') {
       const snapshot = await network.snapshot('testnet', input.netuid ?? 298);

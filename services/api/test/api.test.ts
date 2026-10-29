@@ -80,7 +80,7 @@ test('input validation, origin policy, and configured provider availability reje
     assert.equal(cors.headers.get('access-control-allow-origin'), origin);
     assert.equal(cors.headers.get('access-control-allow-credentials'), 'true');
     assert.equal((await app.request('/v1/session', { headers: { Origin: 'https://untrusted.example' } })).status, 403);
-    const oversized = await submit(app, cookie, { providerId: 'saygm', prompt: 'x'.repeat(20_000) });
+    const oversized = await submit(app, cookie, { providerId: 'saygm', prompt: 'x'.repeat(370_000) });
     assert.equal(oversized.status, 413);
     assert.equal(dispatches, 0);
     await drain();

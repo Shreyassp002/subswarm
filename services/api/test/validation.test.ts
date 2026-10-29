@@ -25,7 +25,7 @@ test('provider-specific inputs preserve typed limits and reject unrelated contro
 });
 
 test('discovery providers cannot be submitted through the execution API', () => {
-  for (const providerId of ['attelier', 'everyframe', 'hippius', 'ridges']) {
+  for (const providerId of ['everyframe', 'ridges']) {
     assert.throws(() => parseJobInput({ providerId, prompt: 'Run a task' }));
   }
 });

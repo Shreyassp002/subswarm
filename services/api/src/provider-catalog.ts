@@ -86,10 +86,12 @@ export function providerCatalog(config: Config, networkAvailable: boolean): Prov
     {
       id: 'attelier', name: 'Attelier', netuid: 126, network: 'mainnet', category: 'Video',
       description: 'Create video, images or audio with model-specific media tools.',
-      status: 'external', taskKind: null, attribution: 'none', website: 'https://attelier.ai', docsUrl: 'https://docs.attelier.ai/', inputs: [],
-      inputDescription: 'Choose a model and its supported prompt, reference media and generation settings in the provider app.',
-      outputDescription: 'Image, video or audio files from an asynchronous job. The API requires a parameter-bound quote, durable request tracking and authenticated downloads.',
-      reason: 'The media workflow is not integrated here. Inference uses an API Console key and a separate USD balance; app credits are not API credit.',
+      status: config.attelierApiKey && config.attelierModel ? 'ready' : 'needs_key', taskKind: 'media', attribution: 'none', website: 'https://attelier.ai', docsUrl: 'https://docs.attelier.ai/',
+      inputs: [{ key: 'prompt', type: 'textarea', label: 'Describe your creation', required: true, maxLength: 4000, placeholder: 'A tiny village under a warm evening sky.' }],
+      inputDescription: 'A text prompt for the operator-configured media model and generation settings.',
+      outputDescription: 'Private image, video or audio outputs, with authenticated downloads and verified file integrity.',
+      exampleInput: { providerId: 'attelier', prompt: 'A tiny village under a warm evening sky.' },
+      reason: config.attelierApiKey && config.attelierModel ? undefined : 'An Attelier API Console key, funded USD API balance and model configuration are required. App credits are separate.',
     },
     {
       id: 'everyframe', name: 'EveryFrame', netuid: 117, network: 'mainnet', category: 'Video',
@@ -102,10 +104,11 @@ export function providerCatalog(config: Config, networkAvailable: boolean): Prov
     {
       id: 'hippius', name: 'Hippius', netuid: 75, network: 'mainnet', category: 'Storage',
       description: 'Store and retrieve files with Drive or S3-compatible object storage.',
-      status: 'external', taskKind: null, attribution: 'none', website: 'https://console.hippius.com', docsUrl: 'https://docs.hippius.com/', inputs: [],
-      inputDescription: 'Files and storage destinations, with account access and S3 credentials for API clients.',
-      outputDescription: 'Stored files and object keys, retrieved through the provider console or an authenticated storage client.',
-      reason: 'Storage uploads, credentials and retention are not integrated here. Saved Subswarm results remain in local server storage.',
+      status: config.hippiusAccessKey && config.hippiusSecretKey && config.hippiusBucket ? 'ready' : 'needs_key', taskKind: 'storage', attribution: 'none', website: 'https://console.hippius.com', docsUrl: 'https://docs.hippius.com/',
+      inputs: [{ key: 'fileBase64', type: 'file', label: 'Pack a file', required: true, description: 'Up to 256 KiB. Private to this workspace; download or delete it from the journal.' }],
+      inputDescription: 'Upload a small file into the village storage account.',
+      outputDescription: 'A private stored file with a download and delete action. Storage lasts until you or the operator delete it; keep your own backup.',
+      reason: config.hippiusAccessKey && config.hippiusSecretKey && config.hippiusBucket ? undefined : 'Hippius S3 access keys and a private bucket are required.',
     },
     {
       id: 'ridges', name: 'Ridges', netuid: 62, network: 'mainnet', category: 'Code',
@@ -113,7 +116,7 @@ export function providerCatalog(config: Config, networkAvailable: boolean): Prov
       status: 'external', taskKind: null, attribution: 'none', website: 'https://app.ridges.ai', docsUrl: 'https://docs.ridges.ai/', inputs: [],
       inputDescription: 'Connect a GitHub repository and describe the software change in an issue.',
       outputDescription: 'A proposed code change delivered as a pull request for your review. Competition leaderboards do not identify the worker for a particular customer job.',
-      reason: 'Repository authorization and coding jobs are not integrated here. Ridgeline requires its own account access and task credits.',
+      reason: 'Ridgeline runs in its own GitHub-connected service. Its documented API requires Base mainnet USDC, outside this testnet village.',
     },
   ];
 }
