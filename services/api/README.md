@@ -89,8 +89,54 @@ URLs require exact HTTPS origins in `GEN404_IMAGE_ORIGINS`; private DNS targets,
 redirects, oversized images and unsupported content are rejected. Downloads use
 server credentials, require the owning session and are capped at 32 MiB.
 
-Attelier, EveryFrame, Hippius and Ridges are discovery-only integrations. Their
-media, storage and repository workflows are not represented as working quests.
+Attelier uses its [inference API](https://docs.attelier.ai/inference/), not the
+separate app wallet. Set `ATTELIER_API_KEY`, choose an available model ID from
+`GET https://inference.attelier.ai/v1/models`, and set any required model settings
+in `ATTELIER_PARAMETERS_JSON`. The quest supplies `prompt`. Prices are checked
+before admission against `ATTELIER_MAX_USD_MICROS` (default 1,000,000 = $1).
+Fallback routing is disabled. Quote and request identities persist; admission
+uses the job ID as its idempotency key. Polling stops after ten minutes. Downloads
+are session-owned, restricted to request-bound provider URLs, capped at 64 MiB,
+and checked against the provider's SHA-256. Provider billing remains separate
+from test-TAO quest accounting. Unsupported output formats fail closed.
+
+Hippius uses the official AWS S3 SDK against `https://s3.hippius.com`, region
+`decentralized`, with path-style addressing. Configure `HIPPIUS_ACCESS_KEY_ID`,
+`HIPPIUS_SECRET_ACCESS_KEY` and `HIPPIUS_BUCKET` for an existing private bucket.
+Use a bucket-scoped provider credential where available. The API stores files
+up to 256 KiB at server-assigned job keys; downloads verify the recorded digest.
+The owner can delete a file from its result card. Receipts remain in the journal.
+Objects remain until deleted by the user or operator; this is not a backup or
+an unlimited-retention promise. A lost upload acknowledgement can leave an
+unreferenced object at `subswarm/<job-id>`; operators can reconcile these against
+failed/interrupted jobs. Do not configure a public-read bucket or lifecycle
+policy that contradicts the advertised retention. See [Hippius docs](https://docs.hippius.com/).
+
+EveryFrame and Ridges remain external services. EveryFrame's
+[FAQ](https://docs.everyframe.studio/studio/faq/) says there is no public generation
+API. Ridges' documented [x402 API](https://docs.ridges.ai/ridgeline/x402) requires
+USDC on Base mainnet. Neither limitation is bypassed in this testnet project.
 No API key implies free credits, and configured access is checked against the
 provider when a request runs. Live provider results remain unverified until
 operator accounts are supplied.
+
+
+| Method | Route | Behavior |
+| --- | --- | --- |
+| GET | `/v1/jobs/:id/files/media/:index` | Owner-only, hash-verified Attelier media |
+| GET | `/v1/jobs/:id/files/storage` | Owner-only Hippius file download |
+| POST | `/v1/jobs/:id/files/storage/delete` | Delete an owned file; preserve receipt |
+
+## Local preparation
+
+Run `npm run prepare:testnet --workspace @subswarm/api` from the root. It verifies
+the pinned testnet genesis using read-only RPC, prepares an sr25519 receiver in
+ignored `.runtime/wallets/testnet-receiver.json` (mode 0600), and updates only
+payment fields in the ignored API env. Existing receiver, prices and activation
+height are preserved. It refuses to modify an already enabled setup. Default
+prices are 1,000,000 rao (0.001 test TAO) per quest, not a USD conversion or a
+statement of provider cost. The API never loads the receiver key. No transfer,
+provider key provisioning, provider purchase or deployment occurs.
+
+Authenticated provider calls, browser wallet signatures and funded deposits
+still require operator access and live verification before public activation.

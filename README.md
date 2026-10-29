@@ -41,8 +41,10 @@ The Map menu provides keyboard-accessible access to every district.
 | ChronoSeek | Video-search adapter | Reachable `CHRONOSEEK_URL`, optional key |
 | Chutes | Text-generation adapter | `CHUTES_API_KEY`, optional `CHUTES_MODEL` |
 | 404-GEN | Text/image to SPZ or image to GLB | `GEN404_API_KEY`, image host allowlist |
-| Attelier, EveryFrame, Hippius | Discovery links | Execution not integrated |
-| Ridges | Discoverable district | Execution unavailable |
+| Attelier | Quote-bounded image/video/audio generation | Inference key, model ID and model parameters |
+| Hippius | Private small-file upload, download and delete | S3 key pair and existing private bucket |
+| EveryFrame | External studio link | No documented customer generation API |
+| Ridges | External coding service link | Documented API requires Base mainnet payments |
 
 Keys belong only in `services/api/.env`. No provider account is assumed to have
 free credit. Authenticated provider calls have not been verified without keys.
@@ -57,8 +59,8 @@ a request or won a competition. Character animation never fabricates results.
 ## Quests and testnet payments
 
 Each house presents the provider's supported input fields. Results render as
-text, search links, video time ranges, downloadable 3D files, or a participant
-roster. Jobs and outputs persist in the journal. Animated couriers gather when
+text, search links, video time ranges, downloadable 3D files, media previews,
+private stored files, or a participant roster. Jobs and outputs persist in the journal. Animated couriers gather when
 a request runs; they are decorative and do not imply miners competed for it.
 
 Paid quests use a prepaid service balance denominated in test TAO. Connect a
@@ -69,8 +71,11 @@ failure. The operator separately supplies provider API credits. Providers do
 not automatically accept TAO, and no provider credits have been provisioned
 in this checkout.
 
-Deposits are disabled until a dedicated testnet receiver, starting block and
-integer-rao prices are configured. No mainnet transactions are supported.
+Run `npm run prepare:testnet --workspace @subswarm/api` to prepare a dedicated
+local receiver, verify testnet genesis and set a deposit start block plus default
+quest prices. It never submits a transaction or enables payments. Back up the
+ignored `.runtime/wallets/testnet-receiver.json` privately. Deposits stay disabled
+until the operator activates payments after configuring provider access. No mainnet transactions are supported.
 Unused credit remains in the service balance; on-chain withdrawals are not
 implemented. Wallet signatures and funded deposits still need a live browser
 check with a test account before public activation. See the
