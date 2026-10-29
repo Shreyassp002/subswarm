@@ -106,8 +106,12 @@ Hippius uses the official AWS S3 SDK against `https://s3.hippius.com`, region
 Use a bucket-scoped provider credential where available. The API stores files
 up to 256 KiB at server-assigned job keys; downloads verify the recorded digest.
 The owner can delete a file from its result card. Receipts remain in the journal.
-Objects remain until deleted by the user or operator; this is not a backup or
-an unlimited-retention promise. A lost upload acknowledgement can leave an
+New uploads include seven days of storage, disclosed before payment and saved
+with the result. The API denies downloads at expiry. A single-process worker
+deletes expired objects every minute, pins their recorded version where present,
+and retries failures without charging users again. Deletion can be delayed by
+provider outages. Previously saved files without an expiry keep their original
+until-deleted policy. This is not a backup or an unlimited-retention promise. A lost upload acknowledgement can leave an
 unreferenced object at `subswarm/<job-id>`; operators can reconcile these against
 failed/interrupted jobs. Do not configure a public-read bucket or lifecycle
 policy that contradicts the advertised retention. See [Hippius docs](https://docs.hippius.com/).
@@ -140,3 +144,48 @@ provider key provisioning, provider purchase or deployment occurs.
 
 Authenticated provider calls, browser wallet signatures and funded deposits
 still require operator access and live verification before public activation.
+
+
+## Setup status without spending credits
+
+Run `npm run check:setup --workspace @subswarm/api`. It checks local configuration
+and the CLI executable. It does not call providers, inspect their balances,
+create jobs, touch the database or print credential values. `configured_unverified`
+means the required fields exist, not that a provider works. Add credentials only
+to the ignored API `.env`, then restart the API when ready for live verification.
+Do not enable payments merely because this report shows configured fields.
+
+## Pricing policy
+
+The local hackathon tariff is 0.001 test TAO per completed quest, fixed within
+each provider's input/output limits. New storage quests include seven days and
+at most 256 KiB. Test TAO has no redemption value; this tariff demonstrates the
+payment flow and does not finance real provider usage. Provider costs come from
+the operator's separate credit budget. Request limits cap attempts, not USD cost.
+Attelier additionally checks its provider quote against a configured USD ceiling.
+
+For a future real-value service, estimate the full provider cost of an attempt,
+including failed attempts, infrastructure overhead and any included storage term.
+Use a measured success rate and a chosen gross margin. With cost C, success
+fraction p, margin m and TAO price X, revenue per successful quest is C/(p*(1-m));
+convert to rao using X and round upward once. Our calculator uses exact integers.
+It is a planning tool, not an oracle, exchange or automatic repricing service:
+
+```bash
+npm run price:quest --workspace @subswarm/api -- \
+  --provider-cost-micros 10000 --overhead-micros 2000 \
+  --tao-usd-micros 300000000 --success-bps 9000 --margin-bps 2000
+```
+
+These are illustrative assumptions, not current market/provider prices. This
+example returns 55,556 rao. One USD is 1,000,000 USD micros. A basis point is
+1/10,000. The calculation assumes each attempt incurs the supplied full cost,
+including failures, and charges only successes. Change the assumptions using
+observed bills; no formula guarantees profitability under unknown costs or
+exchange-rate movements. The command never writes env files or submits payments.
+
+Completed means a supported result was saved, not a guarantee of correctness or
+satisfaction. A failed or interrupted quest releases the reservation to the
+internal balance; it does not send an on-chain refund. Downloads and storage
+expiry do not cause additional user charges. Provider billing can still occur
+when Subswarm releases a quest reservation, and remains the operator's cost.

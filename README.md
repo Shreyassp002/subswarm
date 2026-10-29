@@ -42,7 +42,7 @@ The Map menu provides keyboard-accessible access to every district.
 | Chutes | Text-generation adapter | `CHUTES_API_KEY`, optional `CHUTES_MODEL` |
 | 404-GEN | Text/image to SPZ or image to GLB | `GEN404_API_KEY`, image host allowlist |
 | Attelier | Quote-bounded image/video/audio generation | Inference key, model ID and model parameters |
-| Hippius | Private small-file upload, download and delete | S3 key pair and existing private bucket |
+| Hippius | Private small files with seven-day storage, download and delete | S3 key pair and existing private bucket |
 | EveryFrame | External studio link | No documented customer generation API |
 | Ridges | External coding service link | Documented API requires Base mainnet payments |
 
@@ -107,6 +107,7 @@ packages/shared   TypeScript API contracts
 ```bash
 npm run build
 npm run typecheck
+npm run check:setup --workspace @subswarm/api
 npm run lint --workspace @subswarm/web
 npm test --workspace @subswarm/api
 ```
@@ -120,3 +121,12 @@ building the frontend. Keep both services on the same site when deploying so
 sessions do not depend on third-party cookies.
 
 See [third-party notices](THIRD_PARTY_NOTICES.md) for reused code and artwork.
+
+
+The local tariff is 0.001 test TAO per completed quest, a demonstration price
+rather than a real-value exchange rate. New Hippius files include seven days
+of storage with automatic expiry cleanup. See the API README for the offline
+cost calculator, failed-request economics and setup report. Provider credentials,
+account access, live provider/wallet verification and deployment remain separate
+from local implementation checks. EveryFrame and Ridges remain external services
+until compatible customer access is available.
