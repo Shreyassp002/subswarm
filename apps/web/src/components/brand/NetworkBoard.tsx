@@ -52,12 +52,6 @@ export default function NetworkBoard() {
       const layout = () => {
         if (!board || disposed || !element.clientWidth || !element.clientHeight) return;
         board.resize();
-        const origin = element.getBoundingClientRect();
-        const copy = element.parentElement?.querySelectorAll<HTMLElement>(".hero-copy > *");
-        board.setClear(Array.from(copy || []).map(node => {
-          const box = node.getBoundingClientRect();
-          return { x: box.left - origin.left - 8, y: box.top - origin.top - 8, width: box.width + 16, height: box.height + 16 };
-        }));
       };
       observer = new ResizeObserver(layout);
       observer.observe(element);
