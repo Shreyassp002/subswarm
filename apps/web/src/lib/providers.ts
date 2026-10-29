@@ -29,9 +29,9 @@ export const questRewards: Record<ProviderId, string> = {
   '404gen': 'A downloadable 3D splat or mesh.',
   chutes: 'A text response from a Chutes model.',
   everyframe: 'Video and image tools at the provider studio.',
-  hippius: 'File storage through the provider service.',
+  hippius: 'A privately stored file with download and delete controls.',
   ridges: 'A proposed code change to review.',
-  attelier: 'Media creation tools at the provider.',
+  attelier: 'Generated media with private previews and downloads.',
   chronoseek: 'Matching video moments with timestamps.',
   network: 'A snapshot of registered miners and validators.',
 };

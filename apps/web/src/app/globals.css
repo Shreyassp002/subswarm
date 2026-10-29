@@ -438,3 +438,14 @@ button, p, h1, h2, h3, h4 { margin: 0; }
   .house-panel .house-tabs { margin-top: 8px; }
   .house-body { padding-top: 14px; }
 }
+
+.file-picker { display: grid; gap: 10px; padding: 14px; border: 1px dashed #a99c7a; border-radius: 8px; background: #efe8d8; }
+.file-picker input { max-width: 100%; font-size: 12px; }
+.file-picker small, .stored-file small { display: block; font-size: 11px; color: #746a54; overflow-wrap: anywhere; }
+.media-results figure { margin: 0 0 16px; }
+.media-results img, .media-results video { display: block; width: 100%; height: auto; max-height: 350px; object-fit: contain; border-radius: 8px; background: #292e2a; }
+.media-results audio { width: 100%; }
+.media-results figcaption { margin-top: 8px; }
+.stored-file { display: grid; gap: 10px; padding: 14px; background: #ede6d4; border: 1px solid #d4c8ac; border-radius: 8px; overflow-wrap: anywhere; }
+.stored-file code { font-size: 10px; word-break: break-all; }
+.storage-confirm { display: grid; gap: 8px; }

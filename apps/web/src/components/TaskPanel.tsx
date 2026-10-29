@@ -26,6 +26,7 @@ export default function TaskPanel({ residentState, selectedUid, onRefreshResiden
   const [values, setValues] = useState<Fields>(() => Object.fromEntries(provider.inputs.filter(field => field.defaultValue !== undefined).map(field => [field.key, field.defaultValue])));
   const [quote, setQuote] = useState<PaymentQuote | null>(null);
   const [quoting, setQuoting] = useState(false);
+  const [readingFile, setReadingFile] = useState(false);
   const [quoteError, setQuoteError] = useState<string | null>(null);
   const [tab, setTab] = useState<'quest' | 'residents'>(selectedUid === null ? 'quest' : 'residents');
   const display = districts[provider.id];
@@ -55,7 +56,7 @@ export default function TaskPanel({ residentState, selectedUid, onRefreshResiden
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!ready || busy || submitting || quoting || !connected) return;
+    if (!ready || busy || submitting || quoting || readingFile || !connected) return;
     if (isScan) { await onSubmit(input()); return; }
     if (!wallet?.address) { onOpenWallet(); return; }
     setQuoteError(null);
@@ -69,16 +70,35 @@ export default function TaskPanel({ residentState, selectedUid, onRefreshResiden
     if (!insufficient) { await onSubmit(input(), quote.id); setQuote(null); }
   }
 
+  async function chooseFile(file?: File) {
+    setQuote(null); setQuoteError(null);
+    setValues(previous => ({ ...previous, fileName: '', fileBase64: '' }));
+    if (!file) return;
+    if (!file.size || file.size > 256 * 1024 || !/^[a-zA-Z0-9][a-zA-Z0-9._ -]{0,119}$/.test(file.name)) {
+      setQuoteError('Choose a non-empty file up to 256 KiB. Use a filename with letters, numbers, spaces, dots, underscores or hyphens.');
+      return;
+    }
+    setReadingFile(true);
+    try {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      let binary = '';
+      for (const byte of bytes) binary += String.fromCharCode(byte);
+      setValues(previous => ({ ...previous, fileName: file.name, fileBase64: btoa(binary) }));
+    } catch { setQuoteError('The file could not be read. Please choose it again.'); }
+    finally { setReadingFile(false); }
+  }
+
   function renderField(field: ProviderInputField) {
     const id = `quest-${field.key}`;
-    const props = { id, name: field.key, required: field.required, disabled: busy || submitting || quoting, value: values[field.key] ?? '', 'aria-describedby': field.description ? `${id}-hint` : undefined };
+    const props = { id, name: field.key, required: field.required, disabled: busy || submitting || quoting || readingFile, value: values[field.key] ?? '', 'aria-describedby': field.description ? `${id}-hint` : undefined };
     return <div className={`quest-field field-${field.type}`} key={field.key}><label htmlFor={id}>{field.label}{!field.required && <span> optional</span>}</label>
-      {field.type === 'textarea' ? <textarea {...props} rows={3} maxLength={field.maxLength} placeholder={field.placeholder} onChange={event => change(field.key, event.target.value)} />
+      {field.type === 'file' ? <div className="file-picker"><input id={id} name={field.key} type="file" required={field.required} disabled={busy || submitting || quoting || readingFile} aria-describedby={`${id}-hint`} onChange={event => void chooseFile(event.target.files?.[0])} /><small>{readingFile ? 'Reading your file...' : values.fileName ? `${values.fileName} is ready to store privately.` : 'Choose a file from your device'}</small></div>
+        : field.type === 'textarea' ? <textarea {...props} rows={3} maxLength={field.maxLength} placeholder={field.placeholder} onChange={event => change(field.key, event.target.value)} />
         : field.type === 'select' ? <select {...props} onChange={event => {
           const option = field.options?.find(item => String(item.value) === event.target.value);
           change(field.key, option?.value ?? event.target.value);
         }}>{field.options?.map(option => <option value={option.value} key={option.value}>{option.label}</option>)}</select>
-          : <input {...props} type={field.type === 'number' ? 'number' : 'url'} min={field.min} max={field.max} step={field.type === 'number' ? 1 : undefined} maxLength={field.maxLength} placeholder={field.placeholder} onChange={event => change(field.key, field.type === 'number' && event.target.value !== '' ? Number(event.target.value) : event.target.value)} />}
+          : <input {...props} type={field.type === 'number' ? 'number' : field.type === 'text' ? 'text' : 'url'} min={field.min} max={field.max} step={field.type === 'number' ? 1 : undefined} maxLength={field.maxLength} placeholder={field.placeholder} onChange={event => change(field.key, field.type === 'number' && event.target.value !== '' ? Number(event.target.value) : event.target.value)} />}
       {field.description && <p id={`${id}-hint`} className="field-hint">{field.description}</p>}
     </div>;
   }
@@ -100,7 +120,7 @@ export default function TaskPanel({ residentState, selectedUid, onRefreshResiden
     {!isScan && tab === 'residents' && <section id="residents-view" role="tabpanel" aria-labelledby="residents-tab"><Residents key={`${provider.id}:${selectedUid}`} provider={provider} state={residentState} selectedUid={selectedUid} onRefresh={onRefreshResidents} /></section>}
     <section id="quest-view" role={!isScan ? 'tabpanel' : undefined} aria-labelledby={!isScan ? 'quest-tab' : undefined} hidden={!isScan && tab !== 'quest'}>
     {provider.taskKind ? <form id="house-quest" className="quest-form" onSubmit={submit}>
-      <div className="section-caption"><h3>{isScan ? 'Explore the registry' : provider.category === 'Search' || provider.id === 'chronoseek' ? 'What shall we find?' : 'What shall we make?'}</h3></div>
+      <div className="section-caption"><h3>{isScan ? 'Explore the registry' : provider.taskKind === 'storage' ? 'What shall we keep?' : provider.category === 'Search' || provider.id === 'chronoseek' ? 'What shall we find?' : 'What shall we make?'}</h3></div>
       {provider.exampleInput && !isScan && <button type="button" className="text-button" disabled={busy || quoting} onClick={() => {
         const { providerId: _provider, ...example } = provider.exampleInput!;
         void _provider; setValues(previous => ({ ...previous, ...example })); setQuote(null);
@@ -124,7 +144,7 @@ export default function TaskPanel({ residentState, selectedUid, onRefreshResiden
       <div className="quest-price"><span>{isScan ? 'Registry quest' : 'Quest price'}</span><strong>{isScan ? 'Free' : quote ? `${formatTAO(quote.amountRao)} test TAO` : price ? `${formatTAO(price)} test TAO` : 'Coming soon'}</strong></div>
       {!isScan && quote && <p className="field-hint">Fixed price for these inputs. Reserved when sent, charged only after the result is saved. Quote expires at {new Date(quote.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.</p>}
       {insufficient && <button className="text-button" type="button" onClick={onOpenWallet}><Wallet size={14} />Add test TAO to continue</button>}
-      <button className="primary-button" form="house-quest" type="submit" disabled={!ready || busy || submitting || quoting || !connected || insufficient || (!isScan && !payments?.enabled)}>
+      <button className="primary-button" form="house-quest" type="submit" disabled={!ready || busy || submitting || quoting || readingFile || (provider.taskKind === 'storage' && !values.fileBase64) || !connected || insufficient || (!isScan && !payments?.enabled)}>
         {submitting || working || quoting ? <><LoaderCircle size={16} className="spin" />{quoting ? 'Getting your quote' : job?.status === 'queued' ? 'Quest queued' : 'Working on your quest'}</>
           : <><Compass size={16} />{!ready ? 'Quests opening soon' : isScan ? 'Explore the network' : !wallet?.address ? 'Connect wallet' : quote ? `Confirm ${formatTAO(quote.amountRao)} test TAO` : 'Review quest price'}<ChevronRight size={16} /></>}
       </button>
