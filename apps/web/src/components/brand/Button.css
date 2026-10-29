@@ -1,0 +1,95 @@
+.brand-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  height: 48px;
+  padding: 0 18px;
+  overflow: hidden;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  isolation: isolate;
+  transition: color 0.3s steps(3);
+}
+
+/* A 12 x 3 grid of squares that fill in a scattered order */
+.brand-fill {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+}
+
+.brand-fill i {
+  opacity: 0;
+  transition: opacity 0.01s;
+}
+
+.brand-button:hover .brand-fill i,
+.brand-button:focus-visible .brand-fill i {
+  opacity: 1;
+}
+
+.brand-label-text {
+  position: relative;
+}
+
+.brand-arrow {
+  width: 10px;
+  height: 10px;
+  transition: transform 0.3s steps(3);
+}
+
+.brand-button:hover .brand-arrow {
+  transform: translateX(4px);
+}
+
+.brand-pink {
+  background: var(--pink);
+  color: var(--white);
+}
+
+.brand-pink .brand-fill i {
+  background: var(--yellow);
+}
+
+.brand-pink:hover {
+  color: var(--ink);
+}
+
+.brand-white {
+  background: var(--white);
+  color: var(--blue);
+}
+
+.brand-white .brand-fill i {
+  background: var(--ink);
+}
+
+.brand-white:hover {
+  color: var(--white);
+}
+
+.brand-line {
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
+.brand-line .brand-fill i {
+  background: var(--white);
+}
+
+.brand-line:hover {
+  color: var(--blue);
+}
+
+.brand-ink {
+  background: var(--ink);
+  color: var(--white);
+}
+
+.brand-ink .brand-fill i {
+  background: var(--pink);
+}

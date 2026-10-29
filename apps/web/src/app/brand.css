@@ -1,0 +1,15 @@
+@font-face { font-family: 'Swarm Text'; src: url('/fonts/dm-sans/DMSans.ttf') format('truetype'); font-weight: 100 1000; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Swarm Display'; src: url('/fonts/barlow/BarlowCondensed-BlackItalic.ttf') format('truetype'); font-weight: 900; font-style: italic; font-display: swap; }
+.swarm-brand { --blue: #1b35ff; --blue-2: #1428d8; --blue-deep: #0a1480; --ink: #07081a; --ink-2: #0e1030; --paper: #f2f1ea; --white: #fff; --pink: #ff3ea5; --yellow: #ffe53b; --muted: #696a79; --line: #ffffff38; --ink-line: #07081a29; --gutter: clamp(20px, 3vw, 48px); font-family: 'Swarm Text', Arial, sans-serif; font-size: 15px; line-height: 1.5; color: var(--ink); }
+.swarm-brand .display { font-family: 'Swarm Display', Impact, sans-serif; font-weight: 900; font-style: italic; line-height: .86; letter-spacing: -.025em; text-transform: uppercase; }
+.swarm-brand .pixel { font-family: var(--font-mono); font-size: 10px; line-height: 1.5; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; }
+.swarm-wordmark { display: inline-flex; align-items: center; flex: 0 0 auto; gap: 11px; font-weight: 900; font-size: 22px; letter-spacing: -1px; }
+.swarm-brand :focus-visible { outline: 2px solid var(--pink); outline-offset: 4px; }
+.swarm-brand ::selection { background: var(--pink); color: #fff; }
+.swarm-brand .skip-link { background: white; color: var(--ink); z-index: 1000; }
+.swarm-brand .logo-attelier, .logo-attelier { background: #151520; padding: 5px; }
+.brand-label { display: inline-block; padding: 5px 9px; color: white; background: var(--blue); font: 10px/1.4 var(--font-mono); text-transform: uppercase; letter-spacing: .06em; }
+.pink-label { background: var(--pink); }
+.swarm-brand .provider-logo { border-radius: 0; padding: 4px; }
+.swarm-brand .provider-logo.logo-attelier { background: var(--ink); }
+@media (prefers-reduced-motion: reduce) { .swarm-brand *, .swarm-brand *::before, .swarm-brand *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }

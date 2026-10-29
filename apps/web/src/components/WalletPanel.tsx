@@ -8,11 +8,13 @@ import { formatTAO, parseTAO } from "@/lib/money";
 import { claimDeposit, connectWallet, listWalletAccounts, loadPendingDeposit, prepareDeposit, recoverDeposit, sendDeposit, type DepositPreview, type PendingDeposit, type WalletAccount } from "@/lib/wallet";
 
 interface Props {
+  mode?: "village" | "workspace";
   onClose: () => void;
   onChanged: () => void;
 }
 
-export default function WalletPanel({ onClose, onChanged }: Props) {
+export default function WalletPanel({ mode = "village", onClose, onChanged }: Props) {
+  const professional = mode === "workspace";
   const panel = useRef<HTMLElement>(null);
   const operation = useRef(false);
   const [wallet, setWallet] = useState<WalletState | null>(null);
@@ -150,9 +152,9 @@ export default function WalletPanel({ onClose, onChanged }: Props) {
 
   return (
     <aside ref={panel} tabIndex={-1} className="task-panel wallet-panel parchment panel-enter" aria-labelledby="wallet-title" aria-busy={!!busy}>
-      <div className="task-topline"><span>YOUR TRAVEL COMPANION</span><button className="icon-button ink" onClick={onClose} disabled={!!busy} aria-label="Close wallet"><X size={18} /></button></div>
-      <div className="purse-hero"><div className="purse-illustration" aria-hidden="true"><div className="purse-cord" /><div className="purse-bag"><span>τ</span></div><span className="purse-coin">τ</span></div><p className="eyebrow">BITTENSOR TESTNET</p><h2 id="wallet-title">Your quest purse</h2><p>A little TAO. A world to explore.</p></div>
-      <div className="purse-balance"><span>AVAILABLE FOR QUESTS</span><strong>{wallet ? formatTAO(wallet.availableRao) : '...'} <small>test TAO</small></strong><div><span>Reserved for active quests</span><b>{wallet ? formatTAO(wallet.reservedRao) : '...'} TAO</b></div></div>
+      <div className="task-topline"><span>{professional ? "YOUR ACCOUNT" : "YOUR TRAVEL COMPANION"}</span><button className="icon-button ink" onClick={onClose} disabled={!!busy} aria-label="Close wallet"><X size={18} /></button></div>
+      <div className="purse-hero"><div className="purse-illustration" aria-hidden="true"><div className="purse-cord" /><div className="purse-bag"><span>τ</span></div><span className="purse-coin">τ</span></div><p className="eyebrow">BITTENSOR TESTNET</p><h2 id="wallet-title">{professional ? "Your wallet" : "Your quest purse"}</h2><p>{professional ? "Manage your prepaid balance and request activity." : "A little TAO. A world to explore."}</p></div>
+      <div className="purse-balance"><span>{professional ? "AVAILABLE BALANCE" : "AVAILABLE FOR QUESTS"}</span><strong>{wallet ? formatTAO(wallet.availableRao) : '...'} <small>test TAO</small></strong><div><span>Reserved for active requests</span><b>{wallet ? formatTAO(wallet.reservedRao) : '...'} TAO</b></div></div>
       {!wallet && !error && <p className="field-hint">Loading your wallet...</p>}
       {wallet?.address ? <div className="wallet-connection"><p className="eyebrow">CONNECTED ACCOUNT</p><code className="wallet-address">{wallet.address}</code><button className="text-button" disabled={!!busy} onClick={() => void run("Disconnecting wallet", async () => { await api("/v1/wallet/disconnect", { method: "POST", body: "{}" }); setPreview(null); await refresh(); })}>Disconnect wallet</button></div> : wallet && <div className="quest-form">
         {accounts.length ? <><label htmlFor="wallet-account">Choose an account</label><select id="wallet-account" value={address} onChange={(event) => setAddress(event.target.value)} disabled={!!busy}>{accounts.map((account) => <option key={account.address} value={account.address}>{account.name} - {account.address.slice(0, 8)}...{account.address.slice(-6)}</option>)}</select><button className="primary-button" disabled={!!busy || !address} onClick={verifyWallet}>Sign connection message</button></> : <button className="primary-button" disabled={!!busy} onClick={chooseWallet}><Wallet size={16} />Connect wallet</button>}
@@ -160,7 +162,7 @@ export default function WalletPanel({ onClose, onChanged }: Props) {
       </div>}
       <div className="wallet-assurance"><ShieldCheck size={15} /><span>Connection only signs a message. No funds move.</span></div>
       {payments && !payments.enabled && <div className="purse-closed"><Wallet size={18} /><div><strong>Top-ups open soon</strong><p>You can connect now. Deposits are not available yet.</p></div></div>}
-      <details className="quiet-details"><summary>How your purse works</summary><p>Prepay with test TAO to run quests. Provider credits are paid separately by the village operator. Funds are reserved when you send a quest and charged only after a successful result is saved.</p><p>Unused prepaid funds stay in your village balance. On-chain withdrawals are not available.</p>{payments && !payments.enabled && payments.reason && <p>{payments.reason}</p>}</details>
+      <details className="quiet-details"><summary>{professional ? "How your balance works" : "How your purse works"}</summary><p>Prepay with test TAO to run quests. Provider credits are paid separately by Subswarm. Funds are reserved when you send a quest and charged only after a successful result is saved.</p><p>Unused prepaid funds stay in your Subswarm balance. On-chain withdrawals are not available.</p>{payments && !payments.enabled && payments.reason && <p>{payments.reason}</p>}</details>
       {pending && <div className="connection-note"><h3>Deposit awaiting verification</h3><p>{formatTAO(pending.amountRao)} test TAO. Check this transaction before sending another deposit.</p><code className="wallet-address">{pending.txHash}</code><button className="secondary-button" disabled={!!busy || !wallet?.address || !payments?.enabled} onClick={checkPending}>Check pending deposit</button><p className="field-hint">If you return later, this browser keeps the transaction reference. Connect the same wallet to recover it.</p></div>}
       {wallet?.address && payments?.enabled && !pending && !invalidPending && <form className="quest-form" onSubmit={reviewDeposit}>
         <div className="panel-rule" /><h3>Add test TAO</h3><label htmlFor="deposit-amount">Amount in test TAO</label><input id="deposit-amount" inputMode="decimal" autoComplete="off" value={amount} onChange={(event) => { setAmount(event.target.value); setPreview(null); }} placeholder="0.1" disabled={!!busy} required maxLength={30} />
@@ -172,7 +174,7 @@ export default function WalletPanel({ onClose, onChanged }: Props) {
       {busy && <p className="wallet-status" role="status"><LoaderCircle size={16} className="spin" />{busy}</p>}
       {error && <div className="error-note" role="alert"><CircleAlert size={16} /><span>{error}</span></div>}
       {notice && <div className="wallet-status" role="status"><Check size={16} /><span>{notice}</span></div>}
-      {wallet && <section className="wallet-ledger" aria-labelledby="ledger-title"><div className="panel-rule" /><h3 id="ledger-title">Recent activity</h3>{entries.length ? <ul className="ledger-list">{entries.map((entry) => <li key={entry.id}><div><strong>{entry.kind === "deposit" ? "Testnet deposit" : `${entry.providerId || "Provider"} quest`}</strong><span>{entry.status} - {new Date(entry.createdAt).toLocaleString()}</span></div><span>{formatTAO(entry.amountRao)} test TAO</span></li>)}</ul> : <div className="illustrated-empty ledger-empty"><ScrollText size={28} /><h4>A fresh page</h4><p>Your deposits and quests will write the story.</p></div>}</section>}
+      {wallet && <section className="wallet-ledger" aria-labelledby="ledger-title"><div className="panel-rule" /><h3 id="ledger-title">Recent activity</h3>{entries.length ? <ul className="ledger-list">{entries.map((entry) => <li key={entry.id}><div><strong>{entry.kind === "deposit" ? "Testnet deposit" : `${entry.providerId || "Provider"} quest`}</strong><span>{entry.status} - {new Date(entry.createdAt).toLocaleString()}</span></div><span>{formatTAO(entry.amountRao)} test TAO</span></li>)}</ul> : <div className="illustrated-empty ledger-empty"><ScrollText size={28} /><h4>A fresh page</h4><p>Your deposits and requests will appear here.</p></div>}</section>}
       <div className="panel-footnote"><span className="tiny-diamond" />Test tokens. Real provider requests.</div>
     </aside>
   );

@@ -9,6 +9,7 @@ import ResultView from "@/components/ResultView";
 import ResultEvidence from "@/components/ResultEvidence";
 
 interface Props {
+  mode?: "village" | "workspace";
   artifacts: Artifact[];
   jobs: Job[];
   providers: Provider[];
@@ -17,7 +18,8 @@ interface Props {
   onViewQuest: (providerId: ProviderId) => void;
 }
 
-export default function Journal({ artifacts, jobs, providers, initialJobId, onClose, onViewQuest }: Props) {
+export default function Journal({ mode = "village", artifacts, jobs, providers, initialJobId, onClose, onViewQuest }: Props) {
+  const professional = mode === "workspace";
   const dialog = useRef<HTMLDialogElement>(null);
   const [selectedId, setSelectedId] = useState(artifacts.find((artifact) => artifact.jobId === initialJobId)?.id || artifacts[0]?.id || "");
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "failed">("idle");
@@ -53,8 +55,8 @@ export default function Journal({ artifacts, jobs, providers, initialJobId, onCl
       const bounds = event.currentTarget.getBoundingClientRect();
       if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) onClose();
     }}>
-      <div className="journal-header"><div className="journal-title"><BookOpen size={24} strokeWidth={1.5} /><div><p className="eyebrow">THINGS YOU HAVE DISCOVERED</p><h2 id="journal-title">Your field journal</h2></div></div><button className="icon-button ink" onClick={onClose} aria-label="Close journal"><X size={20} /></button></div>
-      <div className="journal-tabs"><button aria-pressed={tab === "outputs"} className={tab === "outputs" ? "active" : ""} onClick={() => setTab("outputs")}>Collected outputs <span>{artifacts.length}</span></button><button aria-pressed={tab === "quests"} className={tab === "quests" ? "active" : ""} onClick={() => setTab("quests")}>Quest history <span>{jobs.length}</span></button></div>
+      <div className="journal-header"><div className="journal-title"><BookOpen size={24} strokeWidth={1.5} /><div><p className="eyebrow">{professional ? "YOUR SAVED WORK" : "THINGS YOU HAVE DISCOVERED"}</p><h2 id="journal-title">{professional ? "Your library" : "Your field journal"}</h2></div></div><button className="icon-button ink" onClick={onClose} aria-label="Close journal"><X size={20} /></button></div>
+      <div className="journal-tabs"><button aria-pressed={tab === "outputs"} className={tab === "outputs" ? "active" : ""} onClick={() => setTab("outputs")}>Collected outputs <span>{artifacts.length}</span></button><button aria-pressed={tab === "quests"} className={tab === "quests" ? "active" : ""} onClick={() => setTab("quests")}>{professional ? "Request history" : "Quest history"} <span>{jobs.length}</span></button></div>
       {tab === "outputs" ? artifacts.length ? (
         <div className="journal-content">
           <div className="artifact-list" aria-label="Saved outputs">{artifacts.map((artifact) => {
@@ -73,13 +75,13 @@ export default function Journal({ artifacts, jobs, providers, initialJobId, onCl
             {selectedJob?.result && <ResultEvidence result={selectedJob.result} />}
           </article>}
         </div>
-      ) : <div className="journal-empty"><div className="empty-emblem"><FileText size={32} strokeWidth={1.3} /></div><h3>Every adventure leaves a little something.</h3><p>Complete a quest to collect your first output.<br />It will be kept here for your next visit.</p><button className="primary-button" onClick={onClose}>Back to the village<ChevronRight size={15} /></button></div> : (
+      ) : <div className="journal-empty"><div className="empty-emblem"><FileText size={32} strokeWidth={1.3} /></div><h3>{professional ? "Your work belongs here." : "Every adventure leaves a little something."}</h3><p>Complete a request to save your first output.<br />It will be kept here for your next visit.</p><button className="primary-button" onClick={onClose}>{professional ? "Back to workspace" : "Back to the village"}<ChevronRight size={15} /></button></div> : (
         <div className="quest-history">{jobs.length ? jobs.map((job) => {
           const artifact = artifacts.find((entry) => entry.jobId === job.id);
-          return <div className="history-item" key={job.id}><ScrollText size={19} /><div><strong>{job.result?.title || providers.find((provider) => provider.id === job.providerId)?.name || job.providerId}</strong><p title={job.error || job.input.fileName || job.input.prompt}>{job.error || job.input.fileName || job.input.prompt || `Explore testnet ${job.input.netuid || 298}`}</p><small>{new Date(job.createdAt).toLocaleString()}</small>{artifact ? <button className="text-button" onClick={() => { setSelectedId(artifact.id); setCopyStatus("idle"); setTab("outputs"); }}>Read result<ChevronRight size={14} /></button> : <button className="text-button" onClick={() => onViewQuest(job.providerId)}>Visit district<ChevronRight size={14} /></button>}</div><span className={`history-status ${job.status}`}>{job.status}</span></div>;
-        }) : <div className="journal-empty"><ScrollText size={30} /><h3>A fresh page, a new adventure.</h3><p>Your quests will appear here once you get started.</p></div>}</div>
+          return <div className="history-item" key={job.id}><ScrollText size={19} /><div><strong>{job.result?.title || providers.find((provider) => provider.id === job.providerId)?.name || job.providerId}</strong><p title={job.error || job.input.fileName || job.input.prompt}>{job.error || job.input.fileName || job.input.prompt || `Explore testnet ${job.input.netuid || 298}`}</p><small>{new Date(job.createdAt).toLocaleString()}</small>{artifact ? <button className="text-button" onClick={() => { setSelectedId(artifact.id); setCopyStatus("idle"); setTab("outputs"); }}>Read result<ChevronRight size={14} /></button> : <button className="text-button" onClick={() => onViewQuest(job.providerId)}>{professional ? "Open subnet" : "Visit district"}<ChevronRight size={14} /></button>}</div><span className={`history-status ${job.status}`}>{job.status}</span></div>;
+        }) : <div className="journal-empty"><ScrollText size={30} /><h3>A fresh page, a new adventure.</h3><p>Your requests will appear here once you get started.</p></div>}</div>
       )}
-      <div className="journal-footer"><span className="tiny-diamond" />Saved by the village API. This browser&apos;s session cookie gives you access.</div>
+      <div className="journal-footer"><span className="tiny-diamond" />Saved by Subswarm. This browser&apos;s session cookie gives you access.</div>
     </dialog>
   );
 }

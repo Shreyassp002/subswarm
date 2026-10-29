@@ -1,5 +1,2 @@
-import Village from "@/components/Village";
-
-export default function Home() {
-  return <Village />;
-}
+import Landing from "@/components/Landing";
+export default function Home() { return <Landing />; }

@@ -2,14 +2,15 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { BookOpen, ChevronRight, CircleAlert, Compass, HelpCircle, LoaderCircle, Map, RefreshCw, Wallet, X } from "lucide-react";
-import type { Artifact, Job, JobInput, NetworkSnapshot, Provider, ProviderId, Session, WalletState, PaymentSettings } from "@subswarm/shared";
-import { api } from "@/lib/api";
+import { useState } from "react";
+import { BookOpen, ChevronRight, CircleAlert, Compass, Grid2X2, HelpCircle, LoaderCircle, Map, RefreshCw, Wallet, X } from "lucide-react";
+import type { ProviderId } from "@subswarm/shared";
+import { useWorkspace } from "@/hooks/useWorkspace";
+import ProviderLogo from "@/components/ProviderLogo";
+import { matchesProvider } from "@/lib/provider-search";
 import { districts, providerOrder, statusLabel } from "@/lib/providers";
 import TaskPanel from "@/components/TaskPanel";
 import Journal from "@/components/Journal";
-import { useResidents } from "@/hooks/useResidents";
 import { formatTAO } from "@/lib/money";
 const WalletPanel = dynamic(() => import("@/components/WalletPanel"), { ssr: false });
 
@@ -19,182 +20,17 @@ const WorldCanvas = dynamic(() => import("@/components/WorldCanvas"), {
 });
 
 const names: Record<ProviderId, string> = { saygm: "SayGM", desearch: "Desearch", "404gen": "404 GEN", chutes: "Chutes", everyframe: "EveryFrame", hippius: "Hippius", ridges: "Ridges", attelier: "Attelier", chronoseek: "ChronoSeek", network: "Network" };
-const active = (job: Job | null) => job?.status === "queued" || job?.status === "running";
 
 export default function Village() {
-  const [selectedUid, setSelectedUid] = useState<number | null>(null);
-  const [walletOpen, setWalletOpen] = useState(false);
-  const [wallet, setWallet] = useState<WalletState | null>(null);
-  const [payments, setPayments] = useState<PaymentSettings | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [providers, setProviders] = useState<Provider[]>([]);
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [artifacts, setArtifacts] = useState<Artifact[]>([]);
-  const [snapshot, setSnapshot] = useState<NetworkSnapshot | null>(null);
-  const [chainUnavailable, setChainUnavailable] = useState(false);
-  const [selectedProvider, setSelectedProvider] = useState<ProviderId | null>(null);
-  const [directoryOpen, setDirectoryOpen] = useState(false);
-  const [journalOpen, setJournalOpen] = useState(false);
-  const [journalJobId, setJournalJobId] = useState<string | null>(null);
-  const [helpOpen, setHelpOpen] = useState(false);
-  const [currentJob, setCurrentJob] = useState<Job | null>(null);
-  const [connection, setConnection] = useState<"loading" | "online" | "offline">("loading");
-  const [error, setError] = useState<string | null>(null);
-  const [taskError, setTaskError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [reload, setReload] = useState(0);
-  const { residents, refresh: refreshResidents } = useResidents(providers, !!session);
-  const residentSnapshots = useMemo(() => Object.fromEntries(Object.entries(residents).filter(([, state]) => !!state.snapshot).map(([id, state]) => [id, state.snapshot!])) as Partial<Record<ProviderId, NetworkSnapshot>>, [residents]);
-  const pollingJobId = active(currentJob) ? currentJob?.id : null;
-
-  const refreshWallet = useCallback(async (signal?: AbortSignal) => {
-    try {
-      const data = await api<{wallet: WalletState; payments: PaymentSettings}>("/v1/wallet", {signal});
-      if (!signal?.aborted) { setWallet(data.wallet); setPayments(data.payments); }
-    } catch { if (!signal?.aborted) { setWallet(null); setPayments(null); } }
-  }, []);
-
-  const refreshRecords = useCallback(async (signal?: AbortSignal) => {
-    const [jobData, artifactData] = await Promise.all([
-      api<{ jobs: Job[] }>("/v1/jobs", { signal }),
-      api<{ artifacts: Artifact[] }>("/v1/artifacts", { signal }),
-    ]);
-    if (!signal?.aborted) {
-      setJobs(jobData.jobs);
-      setArtifacts(artifactData.artifacts);
-    }
-    return jobData.jobs;
-  }, []);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    async function load() {
-      setConnection("loading");
-      setError(null);
-      try {
-        const sessionData = await api<{ session: Session }>("/v1/session", { signal: controller.signal });
-        const [providerData, savedJobs] = await Promise.all([
-          api<{ providers: Provider[] }>("/v1/providers", { signal: controller.signal }),
-          refreshRecords(controller.signal),
-        ]);
-        if (controller.signal.aborted) return;
-        setSession(sessionData.session);
-        setProviders(providerData.providers);
-        setCurrentJob(savedJobs.find((job) => active(job)) || null);
-        setConnection("online");
-        void refreshWallet(controller.signal);
-        try {
-          const network = await api<NetworkSnapshot>("/v1/networks/testnet/298", { signal: controller.signal });
-          if (!controller.signal.aborted) { setSnapshot(network); setChainUnavailable(false); }
-        } catch {
-          if (!controller.signal.aborted) setChainUnavailable(true);
-        }
-      } catch (failure) {
-        if (controller.signal.aborted) return;
-        setConnection("offline");
-        setError(failure instanceof Error ? failure.message : "The village API could not be reached.");
-      }
-    }
-    void load();
-    return () => controller.abort();
-  }, [reload, refreshRecords, refreshWallet]);
-
-  useEffect(() => {
-    if (!pollingJobId) return;
-    const controller = new AbortController();
-    let timer: ReturnType<typeof setTimeout>;
-    async function poll() {
-      try {
-        const data = await api<{ job: Job }>(`/v1/jobs/${encodeURIComponent(pollingJobId!)}`, { signal: controller.signal });
-        if (controller.signal.aborted) return;
-        setConnection("online");
-        setError(null);
-        if (active(data.job)) {
-          setCurrentJob(data.job);
-          setJobs((previous) => previous.map((job) => job.id === data.job.id ? data.job : job));
-          timer = setTimeout(poll, 2000);
-        } else {
-          await refreshRecords(controller.signal);
-          if (controller.signal.aborted) return;
-          if (data.job.result?.snapshot) { setSnapshot(data.job.result.snapshot); setChainUnavailable(false); }
-          setCurrentJob(data.job);
-          void refreshWallet(controller.signal);
-        }
-      } catch (failure) {
-        if (controller.signal.aborted) return;
-        setConnection("offline");
-        setError(failure instanceof Error ? failure.message : "The connection was interrupted. Your quest is still saved.");
-        timer = setTimeout(poll, 4000);
-      }
-    }
-    timer = setTimeout(poll, 1800);
-    return () => { controller.abort(); clearTimeout(timer); };
-  }, [pollingJobId, refreshRecords, refreshWallet]);
-
-  useEffect(() => {
-    function onKey(event: KeyboardEvent) {
-      if (document.querySelector("dialog[open]")) return;
-      if (event.key === "Escape") { setSelectedProvider(null); setHelpOpen(false); setDirectoryOpen(false); }
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
-
-  function selectProvider(id: ProviderId) {
-    setSelectedUid(null);
-    setWalletOpen(false);
-    setSelectedProvider(id);
-    setTaskError(null);
-    setHelpOpen(false);
-    setDirectoryOpen(false);
-  }
-
-  function selectResident(id: ProviderId, uid: number) {
-    selectProvider(id);
-    setSelectedUid(uid);
-  }
-
-  function openWallet() {
-    setWalletOpen(true); setSelectedProvider(null); setDirectoryOpen(false); setHelpOpen(false);
-  }
-
-  function openJournal(jobId: string | null = null) {
-    setWalletOpen(false);
-    setJournalJobId(jobId);
-    setJournalOpen(true);
-    setDirectoryOpen(false);
-    setHelpOpen(false);
-  }
-
-  async function sendQuest(input: JobInput, quoteId?: string) {
-    if (submitting || active(currentJob) || connection !== "online") return;
-    setSubmitting(true);
-    setTaskError(null);
-    try {
-      const data = await api<{ job: Job }>("/v1/jobs", { method: "POST", body: JSON.stringify({ ...input, ...(quoteId ? { quoteId } : {}) }) });
-      setCurrentJob(data.job);
-      void refreshWallet();
-      setJobs((previous) => [data.job, ...previous.filter((job) => job.id !== data.job.id)]);
-      if (!active(data.job)) {
-        await refreshRecords();
-        if (data.job.result?.snapshot) { setSnapshot(data.job.result.snapshot); setChainUnavailable(false); }
-      }
-    } catch (failure) {
-      setTaskError(failure instanceof Error ? failure.message : "This quest could not be sent. Please try again.");
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  const selected = providers.find((provider) => provider.id === selectedProvider);
-  const selectedJob = currentJob?.providerId === selectedProvider ? currentJob : jobs.find((job) => job.providerId === selectedProvider) || null;
-  const busy = active(currentJob);
+  const { selectedUid, walletOpen, setWalletOpen, wallet, payments, session, providers, jobs, artifacts, snapshot, chainUnavailable, selectedProvider, setSelectedProvider, directoryOpen, setDirectoryOpen, journalOpen, setJournalOpen, journalJobId, helpOpen, setHelpOpen, currentJob, connection, error, taskError, submitting, setReload, residents, refreshResidents, residentSnapshots, refreshWallet, selectProvider, selectResident, openWallet, openJournal, sendQuest, selected, selectedJob, busy } = useWorkspace();
+  const [search, setSearch] = useState("");
   return (
     <div className="village-app">
       <a className="skip-link" href="#world-controls">Skip to world controls</a>
       <header className="topbar">
         <Link className="brand" href="/" aria-label="Subswarm village home" title={session ? `Exploring as ${session.name}` : "Subswarm"}>subswarm<span>.</span></Link>
         <nav className="world-controls" id="world-controls" aria-label="World controls">
+          <Link className="world-action" href="/app/" aria-label="Open workspace"><Grid2X2 size={16} /><span>Workspace</span></Link>
           <button className={`world-action ${directoryOpen ? "active" : ""}`} aria-label="Map" aria-expanded={directoryOpen} aria-controls="district-directory" onClick={() => { setDirectoryOpen((value) => !value); setSelectedProvider(null); setHelpOpen(false); setWalletOpen(false); }}><Map size={16} /><span>Map</span></button>
           <button className="world-action" aria-label={`Journal${artifacts.length ? `, ${artifacts.length} saved outputs` : ""}`} onClick={() => openJournal()}><BookOpen size={16} /><span>Journal</span>{artifacts.length > 0 && <small>{artifacts.length}</small>}</button>
           <button className={`world-action ${helpOpen ? "active" : ""}`} aria-label="Help" aria-expanded={helpOpen} onClick={() => { setHelpOpen((value) => !value); setDirectoryOpen(false); setSelectedProvider(null); setWalletOpen(false); }}><HelpCircle size={16} /><span>Help</span></button>
@@ -205,12 +41,12 @@ export default function Village() {
         <div className="world-canvas-layer"><WorldCanvas selectedProvider={selectedProvider} onSelectProvider={selectProvider} residents={residentSnapshots} onSelectResident={selectResident} busyProvider={busy ? currentJob?.providerId : null} /></div>
         {directoryOpen && <aside className="directory parchment panel-enter" id="district-directory" aria-labelledby="directory-title">
           <div className="directory-heading"><h2 id="directory-title">Districts</h2><button className="icon-button ink" aria-label="Close map directory" onClick={() => setDirectoryOpen(false)}><X size={17} /></button></div>
-          <div className="provider-list">{providerOrder.map((id) => {
+          <label className="directory-search">Find a subnet<input type="search" placeholder="Name, number or capability" value={search} onChange={event => setSearch(event.target.value)} /></label>
+          <div className="provider-list">{providerOrder.filter(id => { const provider = providers.find(item => item.id === id); return provider ? matchesProvider(provider, search) : !search; }).map((id) => {
             const provider = providers.find((entry) => entry.id === id);
             const display = districts[id];
-            const Icon = display.icon;
-            return <button key={id} className="provider-row" onClick={() => selectProvider(id)} disabled={!provider} title={provider ? statusLabel[provider.status] : "Waiting for the village API"}><span className="district-number">{display.number}</span><Icon size={16} className="district-icon" /><span className="district-name">{provider?.name || names[id]}</span>{provider?.status === "ready" ? <i className="ready-dot" aria-label="Ready" /> : <ChevronRight size={12} className="district-chevron" />}</button>;
-          })}</div>
+            return <button key={id} className="provider-row" onClick={() => selectProvider(id)} disabled={!provider} title={provider ? statusLabel[provider.status] : "Waiting for the village API"}><span className="district-number">{display.number}</span><ProviderLogo id={id} size={22} /><span className="district-name">{provider?.name || names[id]}</span>{provider?.status === "ready" ? <i className="ready-dot" aria-label="Ready" /> : <ChevronRight size={12} className="district-chevron" />}</button>;
+          })}{search && !providers.some(provider => matchesProvider(provider, search)) && <p className="directory-empty">No matching district.</p>}</div>
         </aside>}
         {selected && <TaskPanel key={`${selected.id}:${selectedUid}`} provider={selected} residentState={residents[selected.id]} selectedUid={selectedUid} onRefreshResidents={() => refreshResidents(selected.id)} job={selectedJob} busy={busy} submitting={submitting} connected={connection === "online"} error={taskError} wallet={wallet} payments={payments} onOpenWallet={openWallet} onSubmit={sendQuest} onClose={() => setSelectedProvider(null)} onOpenJournal={() => openJournal(selectedJob?.id || null)} />}
         {walletOpen && <WalletPanel onClose={() => setWalletOpen(false)} onChanged={() => void refreshWallet()} />}

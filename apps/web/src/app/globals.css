@@ -20,7 +20,7 @@
 }
 
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; overflow: hidden; }
+html, body { margin: 0; min-height: 100%; }
 body { color: var(--ink); font-family: var(--font-sans); font-size: 14px; -webkit-font-smoothing: antialiased; background: var(--background); }
 button, input, textarea, select { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
@@ -449,3 +449,12 @@ button, p, h1, h2, h3, h4 { margin: 0; }
 .stored-file { display: grid; gap: 10px; padding: 14px; background: #ede6d4; border: 1px solid #d4c8ac; border-radius: 8px; overflow-wrap: anywhere; }
 .stored-file code { font-size: 10px; word-break: break-all; }
 .storage-confirm { display: grid; gap: 8px; }
+
+.directory-search { display: grid; gap: 6px; padding: 12px; font-size: 11px; }
+.directory-search input { width: 100%; min-width: 0; border: 1px solid #d6ceb5; background: #fff9ec; padding: 9px; border-radius: 3px; font-size: 11px; }
+.directory-empty { padding: 12px; font-size: 12px; }
+.provider-logo { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; overflow: hidden; border-radius: 6px; background: #fff; color: #1b35ff; }
+.provider-logo img { display: block; width: 100%; height: 100%; object-fit: contain; }
+
+@media (max-width: 520px) { .village-app .topbar { gap: 8px; } .village-app .brand { font-size: 23px; } }
+@media (max-width: 360px) { .village-app .world-action { width: 32px; min-width: 32px; min-height: 38px; } .village-app .world-controls { gap: 4px; } }

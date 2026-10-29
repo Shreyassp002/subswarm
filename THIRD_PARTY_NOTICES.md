@@ -40,3 +40,35 @@ The npm lockfile records exact resolved versions and integrity hashes.
 Pixelify Sans is distributed under the SIL Open Font License 1.1. The font and
 license are retained in `apps/web/public/fonts/pixelify-sans`, sourced from
 [Google Fonts](https://github.com/google/fonts/tree/main/ofl/pixelifysans).
+
+## Workspace typography and provider marks
+
+Barlow Condensed and DM Sans are distributed under the SIL Open Font License.
+Their licenses are retained alongside the fonts in `apps/web/public/fonts`.
+Provider marks are used solely to identify the corresponding service, with no
+endorsement implied. They remain the property of their respective owners.
+Original download sources:
+
+- `logos/saygm.svg`: https://saygm.com/favicon.svg
+- `logos/desearch.png`: https://www.desearch.ai/favicon.png
+- `logos/chutes.png`: https://chutes.ai/apple-icon.png?apple-icon.0gj39pa49futm.png
+- `logos/attelier.svg`: https://attelier.ai/_next/static/media/attelier-icon-white.10suds3auaq0u.svg
+- `logos/hippius.png`: https://console.hippius.com/icon1.png?b16d1f489d539a32
+- `logos/ridges.png`: https://app.ridges.ai/logo.png
+- `logos/everyframe.svg`: https://everyframe.studio/media/logo.svg
+- `logos/network.ico`: https://www.bittensor.com/favicon.ico?7ca8cf782439c3f2
+- `fonts/barlow/BarlowCondensed-BlackItalic.ttf`: https://raw.githubusercontent.com/google/fonts/main/ofl/barlowcondensed/BarlowCondensed-BlackItalic.ttf
+- `fonts/barlow/OFL.txt`: https://raw.githubusercontent.com/google/fonts/main/ofl/barlowcondensed/OFL.txt
+- `fonts/dm-sans/DMSans.ttf`: https://raw.githubusercontent.com/google/fonts/main/ofl/dmsans/DMSans%5Bopsz,wght%5D.ttf
+- `fonts/dm-sans/OFL.txt`: https://raw.githubusercontent.com/google/fonts/main/ofl/dmsans/OFL.txt
+
+## World outline
+
+The landing board uses Natural Earth 1:110m land geometry, public domain.
+Source: https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_110m_land.geojson
+Terms: https://www.naturalearthdata.com/about/terms-of-use/
+The visual network routes are decorative, not real provider locations or traffic.
+
+The 404-GEN mark comes from its documented GitHub organization,
+https://github.com/404-Repo, avatar https://avatars.githubusercontent.com/u/154099142?s=200&v=4.
+ChronoSeek uses a capability icon because no verified brand asset was available.

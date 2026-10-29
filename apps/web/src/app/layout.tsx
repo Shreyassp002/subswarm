@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Subswarm | A world of intelligence",
-  description: "Explore a living pixel village of Bittensor subnets. Give real AI providers a quest and collect the results.",
+  title: "Subswarm | One world. Many minds.",
+  description: "Discover and use Bittensor services in one workspace, or explore them in a living pixel village. Search, create and keep your results.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
