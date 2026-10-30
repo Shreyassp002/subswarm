@@ -1,10 +1,13 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": null,
-  "installCommand": "npm ci --no-audit --no-fund",
+  "installCommand": "npm ci --workspace @subswarm/web --workspace @subswarm/shared --no-audit --no-fund",
   "buildCommand": "NEXT_PUBLIC_API_URL=/ npm run build --workspace @subswarm/web",
   "outputDirectory": "apps/web/out",
   "rewrites": [
-    { "source": "/v1/:path*", "destination": "https://subswarm.15-135-178-84.sslip.io/v1/:path*" }
+    {
+      "source": "/v1/:path*",
+      "destination": "https://subswarm.15-135-178-84.sslip.io/v1/:path*"
+    }
   ]
 }

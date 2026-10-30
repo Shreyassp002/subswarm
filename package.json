@@ -17,5 +17,8 @@
     "apps/*",
     "services/*",
     "packages/*"
-  ]
+  ],
+  "engines": {
+    "node": "22.x"
+  }
 }
