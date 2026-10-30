@@ -83,7 +83,7 @@ private stored files, or a participant roster. Jobs and outputs persist in the j
 a request runs; they are decorative and do not imply miners competed for it.
 
 Paid quests use a prepaid service balance denominated in test TAO. Connect a
-Substrate extension wallet, sign a login message, review a testnet deposit,
+Talisman, SubWallet or Polkadot.js extension wallet, sign a login message, review a testnet deposit,
 then confirm a fixed quote for a request. The service reserves that quote
 atomically, charges after saving a successful result, and releases it on
 failure. The operator separately supplies provider API credits. Providers do
@@ -95,6 +95,17 @@ local receiver, verify testnet genesis and set a deposit start block plus defaul
 quest prices. It never submits a transaction or enables payments. Back up the
 ignored `.runtime/wallets/testnet-receiver.json` privately. Deposits stay disabled
 until the operator activates payments after configuring provider access. No mainnet transactions are supported.
+The wallet selector opens only the chosen extension and preserves its identity for
+signing deposits. Account access is checked again before signing. Missing
+extensions link to their official installation sites. Connecting does not require
+TAO; a deposit requires test TAO for its amount, fee and account keep-alive balance.
+
+This application needs fund-owning accounts (coldkeys in Bittensor terminology),
+not miner or validator hotkeys. Keep the operator deposit receiver separate from
+the browser demo account. The API needs only the receiver's public address and
+verifies finalized transfers without its signing key. A coldkey imported into a
+browser extension is an online wallet, not offline cold storage.
+
 Unused credit remains in the service balance; on-chain withdrawals are not
 implemented. Wallet signatures and funded deposits still need a live browser
 check with a test account before public activation. See the

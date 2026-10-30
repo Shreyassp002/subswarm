@@ -10,6 +10,7 @@ const PENDING_KEY = "subswarm.testnet.deposit.v1";
 export interface WalletAccount {
   address: string;
   name: string;
+  source: WalletSource;
 }
 
 export interface DepositPreview {
@@ -63,27 +64,82 @@ async function connectChain(): Promise<ApiPromise> {
   }
 }
 
-export async function listWalletAccounts(): Promise<WalletAccount[]> {
-  const { web3Enable, web3Accounts } = await import("@polkadot/extension-dapp");
-  const extensions = await web3Enable("Subswarm testnet");
-  if (!extensions.length) throw new Error("No wallet access. Install a Substrate wallet extension, unlock it, and allow this site.");
-  const accounts = (await web3Accounts()).filter((account) => !account.meta.genesisHash || account.meta.genesisHash === TESTNET_GENESIS);
-  if (!accounts.length) throw new Error("No compatible accounts are shared. Enable a Bittensor testnet or all-network account in your wallet.");
-  return accounts.map((account) => ({ address: account.address, name: account.meta.name || account.meta.source }));
+export const WALLET_OPTIONS = [
+  { id: "talisman", name: "Talisman", url: "https://www.talisman.xyz/", detail: "Recommended" },
+  { id: "subwallet-js", name: "SubWallet", url: "https://www.subwallet.app/", detail: "Browser extension" },
+  { id: "polkadot-js", name: "Polkadot.js", url: "https://polkadot.js.org/extension/", detail: "Developer signer" },
+] as const;
+export type WalletSource = typeof WALLET_OPTIONS[number]["id"];
+type Extension = Awaited<ReturnType<typeof import("@polkadot/extension-dapp").web3FromSource>>;
+type InjectedWallet = Pick<Extension, "accounts" | "signer">;
+const CONNECTION_KEY = "subswarm.wallet.connection.v1";
+
+export function installedWallets(): WalletSource[] {
+  if (typeof window === "undefined") return [];
+  const injected = (window as unknown as { injectedWeb3?: Record<string, unknown> }).injectedWeb3;
+  return WALLET_OPTIONS.filter(({ id }) => !!injected?.[id]).map(({ id }) => id);
 }
 
-export async function connectWallet(address: string): Promise<WalletState> {
-  const { web3FromAddress } = await import("@polkadot/extension-dapp");
+export function savedWallet(): WalletAccount | null {
+  try {
+    const saved = JSON.parse(localStorage.getItem(CONNECTION_KEY) || "null") as WalletAccount | null;
+    return saved && typeof saved.address === "string" && typeof saved.name === "string" && WALLET_OPTIONS.some(({ id }) => id === saved.source) ? saved : null;
+  } catch { return null; }
+}
+
+export async function savedWalletFor(address: string | null): Promise<WalletAccount | null> {
+  const saved = savedWallet();
+  if (!saved || !address) return null;
+  const { decodeAddress, isAddress } = await import("@polkadot/util-crypto");
+  const { u8aEq } = await import("@polkadot/util");
+  return isAddress(saved.address) && isAddress(address) && u8aEq(decodeAddress(saved.address), decodeAddress(address)) ? saved : null;
+}
+
+export function forgetWallet() {
+  localStorage.removeItem(CONNECTION_KEY);
+}
+
+async function enableWallet(source: WalletSource): Promise<InjectedWallet> {
+  const option = WALLET_OPTIONS.find(({ id }) => id === source);
+  const injected = (window as unknown as { injectedWeb3?: Record<string, { enable: (name: string) => Promise<InjectedWallet> }> }).injectedWeb3;
+  if (!option || !injected?.[source]) throw new Error(`Install or unlock ${option?.name || "your wallet"}, then refresh this page.`);
+  try { return await injected[source].enable("Subswarm testnet"); }
+  catch { throw new Error(`Connection was not approved in ${option.name}. Unlock the extension and allow Subswarm to access your account.`); }
+}
+
+export async function listWalletAccounts(source: WalletSource): Promise<WalletAccount[]> {
+  const extension = await enableWallet(source);
+  const accounts = (await extension.accounts.get()).filter(account => (!account.genesisHash || account.genesisHash === TESTNET_GENESIS) && account.type !== "ethereum");
+  if (!accounts.length) throw new Error("No compatible accounts are shared. Create or share a Substrate account enabled for Bittensor testnet or all networks.");
+  return accounts.map(account => ({ address: account.address, name: account.name || "My account", source }));
+}
+
+async function accountSigner(account: WalletAccount) {
+  const extension = await enableWallet(account.source);
+  const { decodeAddress, isAddress } = await import("@polkadot/util-crypto");
+  const { u8aEq } = await import("@polkadot/util");
+  const accounts = await extension.accounts.get();
+  if (!isAddress(account.address) || !accounts.some(candidate => candidate.type !== "ethereum" && (!candidate.genesisHash || candidate.genesisHash === TESTNET_GENESIS) && isAddress(candidate.address) && u8aEq(decodeAddress(candidate.address), decodeAddress(account.address)))) {
+    throw new Error("This account is no longer shared by the selected wallet. Reconnect and choose your account again.");
+  }
+  return extension.signer;
+}
+
+export async function connectWallet(account: WalletAccount): Promise<WalletState> {
+  const signer = await accountSigner(account);
   const { stringToHex } = await import("@polkadot/util");
-  const injector = await web3FromAddress(address);
-  if (!injector.signer.signRaw) throw new Error("This wallet cannot sign the connection message.");
+  if (!signer.signRaw) throw new Error("This account cannot sign a login message. Use a software Substrate account with message signing enabled.");
+  const { address } = account;
   const { challenge } = await api<{ challenge: { id: string; message: string; expiresAt: string } }>("/v1/wallet/challenge", {
     method: "POST", body: JSON.stringify({ address }),
   });
-  const { signature } = await injector.signer.signRaw({ address, data: stringToHex(challenge.message), type: "bytes" });
+  let signature: string;
+  try { ({ signature } = await signer.signRaw({ address, data: stringToHex(challenge.message), type: "bytes" })); }
+  catch { throw new Error("The connection message was not signed. You can try again; no funds moved."); }
   const { wallet } = await api<{ wallet: WalletState }>("/v1/wallet/verify", {
     method: "POST", body: JSON.stringify({ challengeId: challenge.id, signature }),
   });
+  localStorage.setItem(CONNECTION_KEY, JSON.stringify(account));
   return wallet;
 }
 
@@ -154,14 +210,16 @@ export async function sendDeposit(preview: DepositPreview, settings: PaymentSett
   try {
     const latest = await previewOnChain(chain, preview.address, settings, preview.amountRao);
     if (BigInt(latest.feeRao) > BigInt(preview.feeRao)) throw new Error("The estimated network fee changed. Review the deposit again.");
-    const { web3Enable, web3FromAddress } = await import("@polkadot/extension-dapp");
-    await web3Enable("Subswarm testnet");
-    const injector = await web3FromAddress(preview.address);
+    const selected = savedWallet();
+    const { decodeAddress } = await import("@polkadot/util-crypto");
+    const { u8aEq } = await import("@polkadot/util");
+    if (!selected || !u8aEq(decodeAddress(selected.address), decodeAddress(preview.address))) throw new Error("Reconnect your wallet before signing this deposit.");
+    const signer = await accountSigner(selected);
     const head = await chain.rpc.chain.getFinalizedHead();
     const header = await chain.rpc.chain.getHeader(head);
     const transfer = chain.tx.balances.transferKeepAlive(preview.receiver, preview.amountRao);
     if (loadPendingDeposit()) throw new Error("Another deposit is pending. Verify it before signing a new transfer.");
-    await transfer.signAsync(preview.address, { signer: injector.signer, era: 64 });
+    await transfer.signAsync(preview.address, { signer, era: 64 });
     if (loadPendingDeposit()) throw new Error("Another deposit was started while this one was signing. This transfer was not broadcast.");
     const pending: PendingDeposit = { address: preview.address, receiver: preview.receiver, amountRao: preview.amountRao, txHash: transfer.hash.toHex(), startBlock: header.number.toNumber() };
     savePending(pending);

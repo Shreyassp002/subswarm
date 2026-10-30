@@ -198,3 +198,8 @@
 .professional .panel-rule { background: #e3e6ef; }
 .professional .illustrated-empty > svg, .professional .purse-closed > svg { color: #8c99bd; }
 .professional .illustrated-empty p { color: #8891a8; }
+
+.professional .wallet-option { border: 1px solid #dddde6; background: #f8f8fb; border-radius: 4px; }
+.professional .wallet-option > button:hover { background: #eeefff; }
+.professional .wallet-options > p, .professional .wallet-option small { color: #727382; }
+.professional .wallet-option > a, .professional .connected-extension > svg { color: var(--blue); }

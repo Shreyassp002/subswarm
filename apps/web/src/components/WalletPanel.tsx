@@ -5,7 +5,7 @@ import { Check, CircleAlert, ExternalLink, LoaderCircle, Wallet, ScrollText, Shi
 import type { PaymentLedgerEntry, PaymentSettings, WalletState } from "@subswarm/shared";
 import { api } from "@/lib/api";
 import { formatTAO, parseTAO } from "@/lib/money";
-import { claimDeposit, connectWallet, listWalletAccounts, loadPendingDeposit, prepareDeposit, recoverDeposit, sendDeposit, type DepositPreview, type PendingDeposit, type WalletAccount } from "@/lib/wallet";
+import { claimDeposit, connectWallet, listWalletAccounts, loadPendingDeposit, prepareDeposit, recoverDeposit, sendDeposit, type DepositPreview, type PendingDeposit, type WalletAccount, WALLET_OPTIONS, installedWallets, savedWalletFor, forgetWallet, type WalletSource } from "@/lib/wallet";
 
 interface Props {
   mode?: "village" | "workspace";
@@ -20,6 +20,8 @@ export default function WalletPanel({ mode = "village", onClose, onChanged }: Pr
   const [wallet, setWallet] = useState<WalletState | null>(null);
   const [payments, setPayments] = useState<PaymentSettings | null>(null);
   const [entries, setEntries] = useState<PaymentLedgerEntry[]>([]);
+  const [installed, setInstalled] = useState<WalletSource[]>([]);
+  const [connectedExtension, setConnectedExtension] = useState<WalletAccount | null>(null);
   const [accounts, setAccounts] = useState<WalletAccount[]>([]);
   const [address, setAddress] = useState("");
   const [amount, setAmount] = useState("");
@@ -34,19 +36,25 @@ export default function WalletPanel({ mode = "village", onClose, onChanged }: Pr
 
   useEffect(() => {
     panel.current?.focus({ preventScroll: true });
+    const detect = () => setInstalled(installedWallets());
+    detect();
+    const detection = setTimeout(detect, 700);
+    window.addEventListener("focus", detect);
     let cancelled = false;
     Promise.all([
       api<{ wallet: WalletState; payments: PaymentSettings }>("/v1/wallet"),
       api<{ entries: PaymentLedgerEntry[] }>("/v1/wallet/ledger"),
-    ]).then(([state, ledger]) => {
+    ]).then(async ([state, ledger]) => {
+      const connection = await savedWalletFor(state.wallet.address);
       if (cancelled) return;
+      setConnectedExtension(connection);
       setWallet(state.wallet);
       setPayments(state.payments);
       setEntries(ledger.entries);
       try { setPending(loadPendingDeposit()); }
       catch (error) { setInvalidPending(true); setError(error instanceof Error ? error.message : "Unable to read the saved deposit."); }
     }).catch((error: unknown) => { if (!cancelled) setError(error instanceof Error ? error.message : "Unable to load your wallet."); });
-    return () => { cancelled = true; };
+    return () => { cancelled = true; clearTimeout(detection); window.removeEventListener("focus", detect); };
   }, []);
 
   async function refresh() {
@@ -54,6 +62,7 @@ export default function WalletPanel({ mode = "village", onClose, onChanged }: Pr
       api<{ wallet: WalletState; payments: PaymentSettings }>("/v1/wallet"),
       api<{ entries: PaymentLedgerEntry[] }>("/v1/wallet/ledger"),
     ]);
+    setConnectedExtension(await savedWalletFor(state.wallet.address));
     setWallet(state.wallet);
     setPayments(state.payments);
     setEntries(ledger.entries);
@@ -77,9 +86,11 @@ export default function WalletPanel({ mode = "village", onClose, onChanged }: Pr
     }
   }
 
-  function chooseWallet() {
+  function chooseWallet(source: WalletSource) {
     void run("Opening wallet", async () => {
-      const choices = await listWalletAccounts();
+      setAccounts([]);
+      setAddress("");
+      const choices = await listWalletAccounts(source);
       setAccounts(choices);
       setAddress(choices[0].address);
     });
@@ -87,7 +98,10 @@ export default function WalletPanel({ mode = "village", onClose, onChanged }: Pr
 
   function verifyWallet() {
     void run("Confirm the connection message in your wallet", async () => {
-      setWallet(await connectWallet(address));
+      const selected = accounts.find(account => account.address === address);
+      if (!selected) throw new Error("Choose an account first.");
+      setWallet(await connectWallet(selected));
+      setConnectedExtension(selected);
       setAccounts([]);
       setPreview(null);
       await refresh();
@@ -156,9 +170,9 @@ export default function WalletPanel({ mode = "village", onClose, onChanged }: Pr
       <div className="purse-hero"><div className="purse-illustration" aria-hidden="true"><div className="purse-cord" /><div className="purse-bag"><span>τ</span></div><span className="purse-coin">τ</span></div><p className="eyebrow">BITTENSOR TESTNET</p><h2 id="wallet-title">{professional ? "Your wallet" : "Your quest purse"}</h2><p>{professional ? "Manage your prepaid balance and request activity." : "A little TAO. A world to explore."}</p></div>
       <div className="purse-balance"><span>{professional ? "AVAILABLE BALANCE" : "AVAILABLE FOR QUESTS"}</span><strong>{wallet ? formatTAO(wallet.availableRao) : '...'} <small>test TAO</small></strong><div><span>Reserved for active requests</span><b>{wallet ? formatTAO(wallet.reservedRao) : '...'} TAO</b></div></div>
       {!wallet && !error && <p className="field-hint">Loading your wallet...</p>}
-      {wallet?.address ? <div className="wallet-connection"><p className="eyebrow">CONNECTED ACCOUNT</p><code className="wallet-address">{wallet.address}</code><button className="text-button" disabled={!!busy} onClick={() => void run("Disconnecting wallet", async () => { await api("/v1/wallet/disconnect", { method: "POST", body: "{}" }); setPreview(null); await refresh(); })}>Disconnect wallet</button></div> : wallet && <div className="quest-form">
-        {accounts.length ? <><label htmlFor="wallet-account">Choose an account</label><select id="wallet-account" value={address} onChange={(event) => setAddress(event.target.value)} disabled={!!busy}>{accounts.map((account) => <option key={account.address} value={account.address}>{account.name} - {account.address.slice(0, 8)}...{account.address.slice(-6)}</option>)}</select><button className="primary-button" disabled={!!busy || !address} onClick={verifyWallet}>Sign connection message</button></> : <button className="primary-button" disabled={!!busy} onClick={chooseWallet}><Wallet size={16} />Connect wallet</button>}
-        <p className="wallet-extension">Need a wallet? <a href="https://polkadot.js.org/extension/" target="_blank" rel="noopener noreferrer">Get the extension <ExternalLink size={12} /></a>.</p>
+      {wallet?.address ? <div className="wallet-connection"><p className="eyebrow">CONNECTED ACCOUNT</p>{connectedExtension && <p className="connected-extension"><ShieldCheck size={16} />{WALLET_OPTIONS.find(option => option.id === connectedExtension.source)?.name}<span>{connectedExtension.name}</span></p>}<code className="wallet-address">{wallet.address}</code><button className="text-button" disabled={!!busy} onClick={() => void run("Disconnecting wallet", async () => { await api("/v1/wallet/disconnect", { method: "POST", body: "{}" }); forgetWallet(); setConnectedExtension(null); setPreview(null); await refresh(); })}>Disconnect wallet</button></div> : wallet && <div className="quest-form">
+        {accounts.length ? <><p className="wallet-choice-title">{WALLET_OPTIONS.find(option => option.id === accounts[0].source)?.name}</p><label htmlFor="wallet-account">Choose an account</label><select id="wallet-account" value={address} onChange={(event) => setAddress(event.target.value)} disabled={!!busy}>{accounts.map((account) => <option key={account.address} value={account.address}>{account.name} - {account.address.slice(0, 8)}...{account.address.slice(-6)}</option>)}</select><button className="primary-button" disabled={!!busy || !address} onClick={verifyWallet}>Sign connection message</button><button className="text-button" disabled={!!busy} onClick={() => { setAccounts([]); setAddress(""); setError(null); }}>Choose another wallet</button></> : <div className="wallet-options"><h3>Connect your wallet</h3><p>Choose your extension, then approve the connection.</p>{WALLET_OPTIONS.map(option => <div className="wallet-option" key={option.id}><button disabled={!!busy} onClick={() => chooseWallet(option.id)}><span className={`wallet-monogram ${option.id}`} aria-hidden="true">{option.name.slice(0, 1)}</span><span><strong>{option.name}</strong><small>{installed.includes(option.id) ? "Detected in this browser" : option.detail}</small></span><Wallet size={17} /></button>{!installed.includes(option.id) && <a href={option.url} target="_blank" rel="noopener noreferrer" aria-label={`Install ${option.name}`}>Install <ExternalLink size={12} /></a>}</div>)}</div>}
+        <p className="wallet-extension">Use a Substrate account. You never enter your recovery phrase here.</p>
       </div>}
       <div className="wallet-assurance"><ShieldCheck size={15} /><span>Connection only signs a message. No funds move.</span></div>
       {payments && !payments.enabled && <div className="purse-closed"><Wallet size={18} /><div><strong>Top-ups open soon</strong><p>You can connect now. Deposits are not available yet.</p></div></div>}
