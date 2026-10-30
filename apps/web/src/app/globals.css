@@ -484,7 +484,7 @@ button, p, h1, h2, h3, h4 { margin: 0; }
 .markdown-body { white-space: normal; line-height: 1.75; }
 .markdown-body > :first-child { margin-top: 0; }
 .markdown-body > :last-child { margin-bottom: 0; }
-.markdown-body p { margin: .65em 0; color: inherit; }
+.markdown-body p { margin: .65em 0; font-size: inherit; line-height: inherit; color: inherit; }
 .markdown-body :is(h1, h2, h3, h4, h5, h6) { font-family: inherit; font-weight: 700; line-height: 1.4; margin: 1em 0 .45em; color: inherit; }
 .markdown-body h1 { font-size: 1.55em; }
 .markdown-body h2 { font-size: 1.35em; }
