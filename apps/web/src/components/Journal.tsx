@@ -7,6 +7,7 @@ import { districts } from "@/lib/providers";
 import { safeUrl } from "@/lib/api";
 import ResultView from "@/components/ResultView";
 import ResultEvidence from "@/components/ResultEvidence";
+import MarkdownText from "@/components/MarkdownText";
 
 interface Props {
   mode?: "village" | "workspace";
@@ -67,7 +68,7 @@ export default function Journal({ mode = "village", artifacts, jobs, providers, 
             <div className="artifact-detail-heading"><span className="eyebrow">{selected.type.replaceAll("-", " ")}</span><button className="icon-button ink" aria-label={copyStatus === "copied" ? "Output copied" : "Copy output"} title={copyStatus === "copied" ? "Copied" : "Copy output"} onClick={copy}>{copyStatus === "copied" ? <Check size={17} /> : <Copy size={17} />}</button></div>
             {copyStatus !== "idle" && <p className="field-hint" role="status">{copyStatus === "copied" ? "Copied to clipboard." : "Clipboard unavailable. Select the output text to copy it."}</p>}
             <h3>{selected.title}</h3>
-            <>{selectedJob?.result ? <ResultView result={selectedJob.result} /> : <div className="artifact-body">{selected.content}</div>}</>
+            <>{selectedJob?.result ? <ResultView result={selectedJob.result} /> : <MarkdownText>{selected.content}</MarkdownText>}</>
             {(!selectedJob?.result?.blocks?.length ? selectedJob?.result?.links : undefined)?.map((link, index) => {
               const url = safeUrl(link.url);
               return url ? <a className="result-link" key={`${url}-${index}`} href={url} target="_blank" rel="noopener noreferrer">{link.title}<ExternalLink size={12} /></a> : null;

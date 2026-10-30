@@ -5,6 +5,7 @@ import Image from 'next/image';
 import type { JobResult, ResultBlock } from '@subswarm/shared';
 import { Download, ExternalLink, Film, Trash2, Cloud } from 'lucide-react';
 import { api, downloadUrl, safeUrl } from '@/lib/api';
+import MarkdownText from '@/components/MarkdownText';
 
 function timestamp(seconds: number) {
   const minutes = Math.floor(seconds / 60);
@@ -40,7 +41,7 @@ function StoredFile({ block }: { block: Extract<ResultBlock, { type: 'stored-fil
 }
 
 export default function ResultView({ result, compact = false }: { result: JobResult; compact?: boolean }) {
-  if (!result.blocks?.length) return <div className={compact ? 'result-preview artifact-body' : 'artifact-body'}>{result.text}</div>;
+  if (!result.blocks?.length) return <MarkdownText compact={compact}>{result.text}</MarkdownText>;
   return <div className="result-blocks">{result.blocks.map((block, index) => {
     if (block.type === 'stored-file') return <StoredFile key={block.jobId} block={block} />;
     if (block.type === 'media') return <section key={index} className="media-results">{block.items.map((item, i) => {
@@ -48,10 +49,10 @@ export default function ResultView({ result, compact = false }: { result: JobRes
       if (!url) return <p key={i}>This media link is unavailable.</p>;
       return <figure key={url}>{item.kind === 'image' ? <Image src={url} alt={item.title} width={640} height={480} unoptimized /> : item.kind === 'video' ? <video src={url} controls preload="none" /> : <audio src={url} controls preload="none" />}<figcaption><a href={url} className="text-button"><Download size={14} />Download {item.title}</a></figcaption></figure>;
     })}</section>;
-    if (block.type === 'text') return <section key={index}>{block.model && <p className="result-model">{block.model}</p>}<div className={compact ? 'result-preview artifact-body' : 'artifact-body'}>{block.text}</div></section>;
+    if (block.type === 'text') return <section key={index}>{block.model && <p className="result-model">{block.model}</p>}<MarkdownText compact={compact}>{block.text}</MarkdownText></section>;
     if (block.type === 'search-results') return <section key={index} className="search-results">{!block.items.length && <p>No matching pages were found.</p>}{block.items.slice(0, compact ? 3 : undefined).map((item, i) => {
       const url = safeUrl(item.url);
-      return <article key={`${item.url}-${i}`}><h4>{url ? <a href={url} target="_blank" rel="noopener noreferrer">{item.title}<ExternalLink size={12} /></a> : item.title}</h4><p>{item.snippet}</p>{url && <small>{new URL(url).hostname}</small>}</article>;
+      return <article key={`${item.url}-${i}`}><h4>{url ? <a href={url} target="_blank" rel="noopener noreferrer">{item.title}<ExternalLink size={12} /></a> : item.title}</h4><MarkdownText>{item.snippet}</MarkdownText>{url && <small>{new URL(url).hostname}</small>}</article>;
     })}</section>;
     if (block.type === 'video-moments') {
       const source = safeUrl(block.sourceUrl);

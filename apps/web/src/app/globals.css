@@ -480,3 +480,31 @@ button, p, h1, h2, h3, h4 { margin: 0; }
 
 .deposit-presets { display: flex; flex-wrap: wrap; gap: 8px; }
 .deposit-presets .secondary-button { flex: 1; min-width: 90px; padding: 9px 12px; font-variant-numeric: tabular-nums; }
+
+.markdown-body { white-space: normal; line-height: 1.75; }
+.markdown-body > :first-child { margin-top: 0; }
+.markdown-body > :last-child { margin-bottom: 0; }
+.markdown-body p { margin: .65em 0; color: inherit; }
+.markdown-body :is(h1, h2, h3, h4, h5, h6) { font-family: inherit; font-weight: 700; line-height: 1.4; margin: 1em 0 .45em; color: inherit; }
+.markdown-body h1 { font-size: 1.55em; }
+.markdown-body h2 { font-size: 1.35em; }
+.markdown-body :is(h3, h4, h5, h6) { font-size: 1.15em; }
+.markdown-body :is(ul, ol) { padding-left: 1.6em; margin: .65em 0; }
+.markdown-body ul { list-style: disc; }
+.markdown-body ol { list-style: decimal; }
+.markdown-body li + li { margin-top: .35em; }
+.markdown-body li > p { margin: .25em 0; }
+.markdown-body a { text-decoration: underline; text-underline-offset: 3px; }
+.markdown-body a:hover { opacity: .75; }
+.markdown-body blockquote { border-left: 3px solid currentColor; padding-left: 1em; margin: .8em 0; opacity: .85; }
+.markdown-body code { font-family: var(--font-mono), monospace; font-size: .9em; background: #80808018; padding: .12em .3em; border-radius: 3px; }
+.markdown-body pre { max-width: 100%; overflow-x: auto; padding: 1em; margin: .8em 0; background: #15212d; color: #e6edf3; border-radius: 4px; white-space: pre; }
+.markdown-body pre code { background: transparent; padding: 0; color: inherit; }
+.markdown-table { max-width: 100%; overflow-x: auto; margin: .8em 0; }
+.markdown-table table { width: 100%; border-collapse: collapse; }
+.markdown-table :is(th, td) { padding: .45em .7em; border: 1px solid #80808045; text-align: left; }
+.markdown-table th { background: #80808012; font-weight: 700; }
+.markdown-body hr { margin: 1em 0; border-top: 1px solid #80808045; }
+.markdown-body .contains-task-list { list-style: none; padding-left: .25em; }
+.markdown-body .task-list-item input { margin-right: .5em; }
+.markdown-preview { max-height: 16em; overflow: hidden; }
