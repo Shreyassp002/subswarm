@@ -25,12 +25,28 @@ const faqs = [
   ["Is this on testnet?", "Wallet deposits and balances in this build use test TAO. Some hosted AI APIs serve mainnet subnets and may consume real provider credits. The app does not send mainnet transactions. A provider API and a chain's testnet are different systems."],
 ];
 
+function VillageEntry() {
+  return <Link href="/village/" className="village-entry pixel">
+    <span className="village-entry-sparks" aria-hidden="true">{Array.from({ length: 6 }, (_, i) => <i key={i} />)}</span>
+    <span className="village-entry-face">
+      <svg className="village-entry-door" viewBox="0 0 20 24" aria-hidden="true" shapeRendering="crispEdges">
+        <path fill="#342365" d="M4 0h12v4h4v20H0V4h4z" />
+        <path fill="#9f8bf0" d="M4 4h12v16H4z" />
+        <path className="village-entry-light" fill="#f4dcff" d="M8 4h4v4H8zM4 12h4v4H4zM12 16h4v4h-4z" />
+        <path fill="#ffe53b" d="M0 20h20v4H0z" />
+      </svg>
+      <span>Enter village</span>
+      <svg className="village-entry-arrow" viewBox="0 0 12 12" aria-hidden="true" shapeRendering="crispEdges"><path fill="currentColor" d="M4 0h2v2h2v2h2v4H8v2H6v2H4v-2h2V8h2V4H6V2H4z" /></svg>
+    </span>
+  </Link>;
+}
+
 export default function Landing() {
   return <div className="swarm-brand landing">
     <a className="skip-link" href="#landing-main">Skip to content</a>
     <header className="landing-header"><Link href="/" className="swarm-wordmark"><Mark />SUBSWARM</Link><nav aria-label="Main navigation"><a href="#explore">Subnets</a><a href="#how-it-works">How it works</a><a href="#two-worlds">Two ways in</a><a href="#faq">FAQ</a></nav><Button href="/app/">Open app</Button></header>
     <main id="landing-main">
-      <section className="landing-hero"><NetworkBoard /><div className="hero-shade" aria-hidden="true" /><div className="hero-copy"><p className="pixel hero-kicker">Built with Bittensor</p><h1 className="display">One world.<br /><span>Many minds.</span></h1><p className="hero-lede">Discover and use Bittensor&apos;s AI services.</p><div className="hero-actions"><Button href="/app/">Open app</Button><Button href="/village/" variant="white">Enter village</Button></div></div></section>
+      <section className="landing-hero"><NetworkBoard /><div className="hero-shade" aria-hidden="true" /><div className="hero-copy"><p className="pixel hero-kicker">Built with Bittensor</p><h1 className="display">One world.<br /><span>Many minds.</span></h1><p className="hero-lede">Discover and use Bittensor&apos;s AI services.</p><div className="hero-actions"><Button href="/app/">Open app</Button><VillageEntry /></div></div></section>
       <div className="brand-ticker" aria-hidden="true"><span>ASK SOMETHING</span><i /><span>MAKE SOMETHING</span><i /><span>FIND SOMETHING</span><i /><span>MEET THE NETWORK</span></div>
       <section id="explore" className="landing-explore landing-section"><div className="section-intro"><div><span className="brand-label">The subnet directory</span><h2 className="display">Find your<br /><span>next superpower.</span></h2></div><p>Different networks. Different skills.<br />Pick the service that fits your idea. The workspace shows connection status, inputs and outputs before you begin.</p></div><div className="landing-services">{services.map((service, i) => <Link href={`/app/?subnet=${service.id}`} key={service.id} className="landing-service"><span className="pixel service-index">0{i + 1} / SN {service.sn}</span><ProviderLogo id={service.id} size={48} /><h3>{service.label}</h3><span>{service.name}<ArrowUpRight size={19} /></span></Link>)}</div><div className="explore-foot"><p>Looking for something specific? Search by name, subnet number or capability.</p><Button href="/app/" variant="ink">Explore the directory</Button></div></section>
       <section id="how-it-works" className="landing-how landing-section">
