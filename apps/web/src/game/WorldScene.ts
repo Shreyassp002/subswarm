@@ -2,12 +2,12 @@ import * as Phaser from 'phaser'
 import type { NetworkSnapshot, ProviderId } from '@subswarm/shared'
 import { findPath, type Point } from './navigation'
 import type { WorldBridge, WorldController } from './types'
-import { BUILDINGS, COLLISIONS, PLAYER_START, WORLD_HEIGHT, WORLD_WIDTH, WORLD_SCALE, worldPoint, type VillageBuilding } from './village'
+import { BUILDINGS, COLLISIONS, PLAYER_START, PLAYER_FOOTPRINT, WORLD_HEIGHT, WORLD_WIDTH, WORLD_SCALE, worldPoint, type VillageBuilding } from './village'
 
 const CHARACTERS = ['traveler', 'courier', 'resident'] as const
 const DIRECTIONS = { down: 0, up: 1, left: 2, right: 3 } as const
 type Direction = keyof typeof DIRECTIONS
-const SIGN_WIDTH = 156
+const SIGN_WIDTH = 136
 const STROLLS = [
   [worldPoint(100, 339), worldPoint(271, 339)],
   [worldPoint(303, 350), worldPoint(303, 565)],
@@ -95,8 +95,10 @@ export class WorldScene extends Phaser.Scene implements WorldController {
     this.playerShadow = this.add.ellipse(PLAYER_START.x, PLAYER_START.y + 2, 22 * WORLD_SCALE, 8 * WORLD_SCALE, 0x071c22, 0.55).setDepth(20)
     this.player = this.physics.add.sprite(PLAYER_START.x, PLAYER_START.y, 'traveler').setScale(3 * WORLD_SCALE).setOrigin(0.5, 1)
     this.player.setCollideWorldBounds(true)
-    this.player.body!.setSize(8, 5)
-    this.player.body!.setOffset(4, 11)
+    const footWidth = PLAYER_FOOTPRINT.width / this.player.scaleX
+    const footHeight = PLAYER_FOOTPRINT.height / this.player.scaleY
+    this.player.body!.setSize(footWidth, footHeight)
+    this.player.body!.setOffset((this.player.width - footWidth) / 2, this.player.height - footHeight / 2)
     this.physics.add.collider(this.player, walls)
     this.playerLabel = this.add.text(PLAYER_START.x, PLAYER_START.y - 51, 'YOU', {
       fontFamily: 'monospace', fontSize: '18px', color: '#fff3d5', backgroundColor: '#263a3a', padding: { x: 5, y: 3 },
@@ -131,10 +133,10 @@ export class WorldScene extends Phaser.Scene implements WorldController {
 
   private createSign(building: VillageBuilding) {
     const plate = this.add.graphics()
-    const name = this.add.text(0, -8, building.name, { fontFamily: 'monospace', fontSize: '15px', fontStyle: 'bold', color: '#fff0c7', stroke: '#35261c', strokeThickness: 2 }).setOrigin(0.5)
+    const name = this.add.text(0, -8, building.name, { fontFamily: 'monospace', fontSize: '14px', fontStyle: 'bold', color: '#fff0c7', stroke: '#35261c', strokeThickness: 2 }).setOrigin(0.5)
     const ability = this.add.text(0, 11, building.ability, { fontFamily: 'monospace', fontSize: '10px', color: '#e6c79a' }).setOrigin(0.5)
     const status = this.add.text(0, -37, 'COURIERS AT WORK', { fontFamily: 'monospace', fontSize: '9px', color: '#fff0c7', backgroundColor: '#34473d', padding: { x: 6, y: 4 } }).setOrigin(0.5).setVisible(false)
-    const container = this.add.container(building.sign.x, building.sign.y + 9 * WORLD_SCALE, [plate, name, ability, status]).setDepth(2500).setScale(WORLD_SCALE)
+    const container = this.add.container(building.sign.x, building.sign.y, [plate, name, ability, status]).setDepth(2500).setScale(WORLD_SCALE)
     container.setSize(SIGN_WIDTH, 46).setInteractive({ useHandCursor: true })
     container.on('pointerdown', (_pointer: Phaser.Input.Pointer, _x: number, _y: number, event: Phaser.Types.Input.EventData) => {
       event.stopPropagation()
@@ -149,8 +151,8 @@ export class WorldScene extends Phaser.Scene implements WorldController {
   private paintSign(sign: Sign, selected: boolean, busy: boolean) {
     const left = -SIGN_WIDTH / 2
     const plate = sign.plate.clear()
-    plate.fillStyle(0x30251e).fillRect(-56, 19, 8, 19).fillRect(48, 19, 8, 19)
-    plate.fillStyle(0x87603b).fillRect(-54, 20, 3, 16).fillRect(50, 20, 3, 16)
+    plate.fillStyle(0x30251e).fillRect(-3, 24, 6, 10)
+    plate.fillStyle(0x87603b).fillRect(-1, 24, 2, 9)
     plate.fillStyle(0x201d19, 0.45).fillRect(left + 3, -19, SIGN_WIDTH, 47)
     plate.fillStyle(selected ? 0xc3a16b : 0x9c794c).fillRect(left, -24, SIGN_WIDTH, 48)
     plate.fillStyle(selected ? 0x745238 : 0x57432e).fillRect(left + 3, -21, SIGN_WIDTH - 6, 42)
@@ -268,7 +270,7 @@ export class WorldScene extends Phaser.Scene implements WorldController {
     this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
       if (!pointer.leftButtonDown() || inputBlocked()) return
       const point = this.cameras.main.getWorldPoint(pointer.x, pointer.y)
-      this.route = findPath({ x: this.player.x, y: this.player.y - 3 }, point)
+      this.route = findPath({ x: this.player.x, y: this.player.y }, point)
       const target = this.route.at(-1)
       this.targetRing.setVisible(Boolean(target))
       if (target) this.targetRing.setPosition(target.x, target.y)
@@ -330,6 +332,7 @@ export class WorldScene extends Phaser.Scene implements WorldController {
 
     let dx = 0
     let dy = 0
+    let speed = 132 * WORLD_SCALE
     if (inputBlocked()) {
       this.route = []
       this.targetRing.setVisible(false)
@@ -339,14 +342,18 @@ export class WorldScene extends Phaser.Scene implements WorldController {
       if (dx || dy) { this.route = []; this.targetRing.setVisible(false) }
       else if (this.route.length) {
         const next = this.route[0]
-        const distance = Math.hypot(next.x - this.player.x, next.y - (this.player.y - 3))
-        if (distance < 4 * WORLD_SCALE) this.route.shift()
-        else { dx = next.x - this.player.x; dy = next.y - (this.player.y - 3) }
+        const distance = Math.hypot(next.x - this.player.x, next.y - this.player.y)
+        if (distance < 1.5 * WORLD_SCALE) this.route.shift()
+        else {
+          dx = next.x - this.player.x
+          dy = next.y - this.player.y
+          speed = Math.min(speed, distance * 1000 / Math.max(delta, 1000 / 60))
+        }
         if (!this.route.length) this.targetRing.setVisible(false)
       }
     }
     const length = Math.hypot(dx, dy)
-    this.player.setVelocity(length ? dx / length * 132 * WORLD_SCALE : 0, length ? dy / length * 132 * WORLD_SCALE : 0)
+    this.player.setVelocity(length ? dx / length * speed : 0, length ? dy / length * speed : 0)
     const body = this.player.body as Phaser.Physics.Arcade.Body
     // Render frames between fixed physics steps must not restart the walk cycle.
     if (!length || this.physics.world.stepsLastFrame > 0) {
