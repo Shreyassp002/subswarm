@@ -103,7 +103,7 @@ Review logs locally without publishing credentials or user content.
 
 ## Activation boundaries
 
-The public demo enables test-TAO deposits and paid SayGM and Desearch requests.
+The public demo enables test-TAO deposits and SayGM, Desearch, BitMind, Zeus and Ditto requests.
 Each completed request costs 1,000 rao (0.000001 test TAO). SayGM uses
 `gpt-oss-20b`, with a default output limit of 256 tokens. The shared limit remains
 20 provider attempts per UTC day and two concurrent provider jobs to protect
@@ -116,11 +116,13 @@ exists. To activate another integration, verify its access and credit, configure
 its required settings and a positive test-TAO price, then restart only the API.
 Keep unverified provider credentials private without enabling their prices.
 
-Configured provider adapters still need funded or free-credit request checks.
-ChronoSeek requires gateway access; Attelier requires a selected model;
-404-GEN image URLs require an approved host allowlist. EveryFrame and Ridges
-remain external links. Deployment does not imply these integrations have
-passed live execution checks. No mainnet transactions are enabled.
+The public allowlist is `network,saygm,desearch,bitmind,zeus,ditto`.
+Set `BITMIND_API_KEY`, `ZEUS_API_KEY`, `DITTO_MCP_API_KEY`, `DITTO_SPACE` and
+`TAO_PRICE_BITMIND_RAO`, `TAO_PRICE_ZEUS_RAO`, `TAO_PRICE_DITTO_RAO` on AWS.
+Ditto requires a dedicated storage space; do not use `main`. Zeus free keys use
+the free API host automatically. Unverified integrations and external-only links
+are omitted from the public catalogue. Historical jobs and downloads remain.
+No mainnet transactions are enabled.
 
 
 ## Sponsored first request

@@ -210,3 +210,22 @@ After the credit is spent, users may add a small prepaid test-TAO balance.
 
 Claims use authenticated `POST /v1/wallet/demo-credit` with an empty JSON body.
 Repeated claims return the current balance without issuing credit again.
+
+## Published providers
+
+`PUBLISHED_PROVIDERS` is an explicit allowlist. Public catalogue, quote and job
+routes require an allowlisted provider with complete configuration and a request
+price. Disabled historical adapters remain available only for existing artifacts.
+
+- BitMind accepts a PNG or JPEG up to 256 KiB. File signatures are checked before sending image bytes to its fixed endpoint; arbitrary remote image fetching is not exposed.
+- Zeus selects `free-api.zeussubnet.com` for `free_` keys and the paid host for other keys. Forecasts retain their original timestamps and convert Kelvin to Celsius for display.
+- Ditto uses the official MCP SDK and a dedicated `DITTO_SPACE`, never the account's main memory. Save IDs are bound to server-owned jobs. Retrieval and deletion require the same session's completed job; client-supplied memory IDs and arbitrary tool calls are not accepted. Shared-account search and related-memory results are never exposed. Notes are held in platform-managed provider storage, not end-to-end encrypted storage.
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| GET | `/v1/jobs/:id/memory` | Retrieve the owner's saved Ditto note |
+| POST | `/v1/jobs/:id/memory/delete` | Delete the provider note and clear local output content |
+
+Deletion retains the request and billing receipt. Failed provider operations do not
+settle a reserved request charge. New integrations do not increase the shared
+provider request quota.

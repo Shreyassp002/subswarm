@@ -47,11 +47,11 @@ The workspace supports subnet search by name, number or capability, category
 filters, connection status, provider-specific inputs, participant rosters,
 request progress, private outputs, file controls, wallet activity and receipt
 recovery. The village directory has the same search. Provider deep links use
-`/app/?subnet=chutes` or `/village/?subnet=chutes`.
+`/app/?subnet=saygm` or `/village/?subnet=saygm`.
 
 The directory covers the integrated catalogue, not every Bittensor subnet.
 Connected status means configured, not a guarantee of provider credit or uptime.
-External-only integrations remain labelled. Decorative landing animation does
+Only enabled providers with configured request prices appear in the public catalogue. Decorative landing animation does
 not represent live traffic or provider location.
 
 ## Integration status
@@ -61,16 +61,15 @@ not represent live traffic or provider location.
 | Network Explorer | Read-only testnet scans | Official `btcli` executable |
 | SayGM | Text-generation adapter | `SAYGM_API_KEY`, optional `SAYGM_MODEL` |
 | Desearch | Web-search adapter | `DESEARCH_API_KEY` |
-| ChronoSeek | Video-search adapter | Reachable `CHRONOSEEK_URL`, optional key |
-| Chutes | Text-generation adapter | `CHUTES_API_KEY`, optional `CHUTES_MODEL` |
-| 404-GEN | Text/image to SPZ or image to GLB | `GEN404_API_KEY`, image host allowlist |
-| Attelier | Quote-bounded image/video/audio generation | Inference key, model ID and model parameters |
-| Hippius | Private small files with seven-day storage, download and delete | S3 key pair and existing private bucket |
-| EveryFrame | External studio link | No documented customer generation API |
-| Ridges | External coding service link | Documented API requires Base mainnet payments |
+| BitMind | PNG/JPEG AI-image assessment | `BITMIND_API_KEY` |
+| Zeus | Hourly temperature forecasts | `ZEUS_API_KEY`; free-plan host selected automatically |
+| Ditto | Save, retrieve and delete notes | `DITTO_MCP_API_KEY`, dedicated `DITTO_SPACE` |
 
-Keys belong only in `services/api/.env`. No provider account is assumed to have
-free credit. Authenticated provider calls have not been verified without keys.
+Keys belong only in `services/api/.env`. `PUBLISHED_PROVIDERS` controls the public
+catalogue; a key alone does not activate a paid integration. The public demo
+omits unfunded, invite-only and external-only services. Their existing adapters
+and saved-result download routes are preserved for historical records.
+
 Each house has Quest and Residents tabs. Its roster is read from that provider's
 configured network and subnet. Search by UID, hotkey or role, or click a resident
 in the world. Registry reads have a separate refresh budget and do not spend
@@ -82,8 +81,8 @@ a request or won a competition. Character animation never fabricates results.
 ## Quests and testnet payments
 
 Each house presents the provider's supported input fields. Results render as
-text, search links, video time ranges, downloadable 3D files, media previews,
-private stored files, or a participant roster. Jobs and outputs persist in the journal. Animated couriers gather when
+text, search links, image assessments, dated weather forecasts, retrievable notes
+or a participant roster. Jobs and outputs persist in the journal. Animated couriers gather when
 a request runs; they are decorative and do not imply miners competed for it.
 
 Paid quests use a prepaid service balance denominated in test TAO. Connect a
@@ -157,13 +156,12 @@ sessions do not depend on third-party cookies.
 See [third-party notices](THIRD_PARTY_NOTICES.md) for reused code and artwork.
 
 
-The public demo tariff for SayGM and Desearch is 0.000001 test TAO per completed request, a demonstration price
+The public demo tariff for activated hosted services is 0.000001 test TAO per completed request, a demonstration price
 rather than a real-value exchange rate. New Hippius files include seven days
 of storage with automatic expiry cleanup. See the API README for the offline
 cost calculator, failed-request economics and setup report. Provider credentials,
 account access, live provider/wallet verification and deployment remain separate
-from local implementation checks. EveryFrame and Ridges remain external services
-until compatible customer access is available.
+from local implementation checks. Unverified providers stay outside the public catalogue until a real request and account access are verified.
 
 
 ## Sponsored first request
