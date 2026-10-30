@@ -8,6 +8,7 @@ Subswarm provides a professional workspace and a pixel village for discovering a
 - Registered chain participants are residents. Only request-specific provider evidence can attribute an actual response to a miner. Never invent competitors, winners, provider balances, or completed tasks.
 - Keep provider keys and session tokens out of committed files and logs. Only placeholder environment examples belong in Git.
 - Read-only chain inspection and local/testnet development only. No mainnet transactions or payload signing.
+- Keep live tests minimal in both test TAO and provider credits. Prefer read-only access checks, tiny prompts and outputs, one request per provider, and no automatic billable retries. Do not interpret available wallet balances or API credits as permission to spend them.
 - Verified deposit receipt retries must be idempotent. A lost HTTP reply must neither duplicate credit nor leave pending-deposit recovery blocked.
 - Keep player jobs and artifacts scoped to their server-owned session. Quota reservations and terminal state transitions must persist across restarts.
 - Reuse appropriately licensed assets and keep their notices. Do not import unrelated contracts, pet ownership, or wallet code from source references.
