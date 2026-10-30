@@ -1,5 +1,5 @@
-.landing { background: var(--blue); color: white; overflow-x: clip; }
-.landing-header { height: 84px; padding: 0 var(--gutter); display: flex; gap: 32px; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); position: relative; z-index: 2; }
+.landing { --landing-nav-height: 84px; background: var(--blue); color: white; overflow-x: clip; }
+.landing-header { height: 84px; padding: 0 var(--gutter); display: flex; gap: 32px; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 30; background: var(--blue); }
 .landing-header nav { display: flex; gap: clamp(16px, 2.5vw, 40px); font-size: 14px; font-weight: 500; }
 .landing-header nav a:hover { color: var(--yellow); }
 
@@ -41,7 +41,7 @@
 
 .brand-ticker { background: var(--yellow); color: var(--ink); display: flex; align-items: center; justify-content: space-around; gap: 28px; padding: 22px 24px; font: italic 900 clamp(24px, 3vw, 46px)/1 'Swarm Display', sans-serif; white-space: nowrap; overflow: hidden; }
 .brand-ticker i { flex-shrink: 0; width: 10px; height: 10px; background: var(--pink); }
-.landing-section { padding: clamp(65px, 8vw, 128px) var(--gutter); scroll-margin-top: 24px; }
+.landing-section { padding: clamp(65px, 8vw, 128px) var(--gutter); scroll-margin-top: calc(var(--landing-nav-height) + 24px); }
 .section-intro { display: grid; grid-template-columns: 1.4fr 1fr; gap: 48px; align-items: end; margin-bottom: 56px; }
 .section-intro h2 { font-size: clamp(56px, 7vw, 112px); margin-top: 22px; }
 .section-intro > p { max-width: 420px; font-size: 16px; line-height: 1.8; opacity: .8; }
@@ -95,7 +95,7 @@
 .landing-footer nav a { display: inline-flex; align-items: center; gap: 5px; }
 @media (min-width: 1600px) { .landing-section { padding-inline: max(var(--gutter), calc((100vw - 1450px) / 2)); } }
 @media (max-width: 1100px) { .landing-header nav { gap: 16px; } .landing-header { gap: 18px; } .landing-header .swarm-wordmark { font-size: 19px; } }
-@media (max-width: 800px) { .landing-header nav { display: none; } .landing-header { height: 74px; } .section-intro { grid-template-columns: 1fr; gap: 26px; margin-bottom: 35px; } .section-intro > p { font-size: 14px; } .landing-services { grid-template-columns: repeat(2, 1fr); } .landing-service { padding: 18px; } .landing-service h3 { font-size: 20px; } .explore-foot { align-items: flex-start; flex-direction: column; } .mode-grid { grid-template-columns: 1fr; } .landing-faq { grid-template-columns: 1fr; gap: 35px; } .landing-footer { gap: 22px; } .landing-footer nav { margin-left: 0; } }
+@media (max-width: 800px) { .landing { --landing-nav-height: 74px; } .landing-header nav { display: none; } .landing-header { height: 74px; } .section-intro { grid-template-columns: 1fr; gap: 26px; margin-bottom: 35px; } .section-intro > p { font-size: 14px; } .landing-services { grid-template-columns: repeat(2, 1fr); } .landing-service { padding: 18px; } .landing-service h3 { font-size: 20px; } .explore-foot { align-items: flex-start; flex-direction: column; } .mode-grid { grid-template-columns: 1fr; } .landing-faq { grid-template-columns: 1fr; gap: 35px; } .landing-footer { gap: 22px; } .landing-footer nav { margin-left: 0; } }
 @media (max-width: 450px) { .landing-header .swarm-wordmark { font-size: 17px; gap: 8px; } .landing-header .swarm-wordmark svg { width: 24px; } .landing-services { grid-template-columns: 1fr; } .landing-service h3 { margin: 15px 0; } .workspace-preview { padding-inline: 16px; } .mode-bar { font-size: 8px !important; padding-inline: 12px; } }
 
 .landing-how { background: #0c0d1d; }
