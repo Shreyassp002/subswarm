@@ -125,7 +125,7 @@ export function createExecutor(config: Config, network: NetworkReader, fetcher: 
       if (!model) throw new ApiFailure('no_model_available', 'SayGM has no available chat model. Configure a supported model and retry.', 503);
       const data = parseResponse(chatSchema, await requestJson('https://api.saygm.com/v1/chat/completions', {
         method: 'POST', headers: { Authorization: `Bearer ${config.saygmApiKey}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model, messages: [{ role: 'user', content: input.prompt }], max_tokens: input.maxTokens ?? 1200, stream: false }),
+        body: JSON.stringify({ model, messages: [{ role: 'user', content: input.prompt }], max_tokens: input.maxTokens ?? 256, stream: false }),
       }, fetcher));
       return { title: 'SayGM response', text: data.choices[0].message.content, blocks: [{ type: 'text', text: data.choices[0].message.content, model }] };
     }

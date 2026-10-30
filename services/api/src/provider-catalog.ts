@@ -4,11 +4,11 @@ import type { Config } from './config.js';
 
 const textInputs: ProviderInputField[] = [
   { key: 'prompt', type: 'textarea', label: 'Instructions', description: 'Describe what you want the model to write or explain.', required: true, maxLength: 4000, placeholder: 'Explain how Bittensor validators evaluate miners in plain language.' },
-  { key: 'maxTokens', type: 'number', label: 'Maximum output tokens', description: 'An upper bound on the response length, not a price quote.', required: false, min: 1, max: 1200, defaultValue: 800 },
+  { key: 'maxTokens', type: 'number', label: 'Maximum output tokens', description: 'An upper bound on the response length, not a price quote.', required: false, min: 1, max: 1200, defaultValue: 256 },
 ];
 
 export function providerCatalog(config: Config, networkAvailable: boolean): Provider[] {
-  return [
+  const providers: Provider[] = [
     {
       id: 'network', name: 'Network Explorer', netuid: 298, network: 'testnet', category: 'Network',
       description: 'Inspect registered participants on Bittensor testnet without a wallet.',
@@ -27,7 +27,7 @@ export function providerCatalog(config: Config, networkAvailable: boolean): Prov
       website: 'https://saygm.com', docsUrl: 'https://docs.saygm.com/getting-started/quickstart/',
       inputs: textInputs, inputDescription: 'Text instructions and an output token limit.',
       outputDescription: 'Generated text and the model used. The hosted gateway does not supply verified miner attribution.',
-      exampleInput: { providerId: 'saygm', prompt: 'Explain how Bittensor validators evaluate miners in plain language.', maxTokens: 800 },
+      exampleInput: { providerId: 'saygm', prompt: 'Explain how Bittensor validators evaluate miners in plain language.', maxTokens: 256 },
       reason: config.saygmApiKey ? undefined : 'A server-side SayGM API key is required. Provider credit and model availability are checked when a request runs.',
     },
     {
@@ -120,4 +120,7 @@ export function providerCatalog(config: Config, networkAvailable: boolean): Prov
       reason: 'Ridgeline runs in its own GitHub-connected service. Its documented API requires Base mainnet USDC, outside this testnet village.',
     },
   ];
+  return providers.map(provider => config.payments?.enabled && provider.status === 'ready' && provider.id !== 'network' && !config.payments.pricesRao[provider.id]
+    ? { ...provider, status: 'unavailable', reason: 'Requests are not enabled for this service yet. No payment will be taken.' }
+    : provider);
 }

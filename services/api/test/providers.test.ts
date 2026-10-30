@@ -85,3 +85,28 @@ test('provider errors are sanitized and unsupported integrations never become re
   }
   assert.ok(providerCatalog(config, false).filter((provider) => ['chutes', '404gen', 'attelier', 'everyframe', 'hippius', 'ridges'].includes(provider.id)).every((provider) => provider.status !== 'ready'));
 });
+
+
+test('public payments expose only priced providers as ready, preserving the free registry', () => {
+  const config = readConfig({ TAO_PAYMENTS_ENABLED: 'true', SAYGM_API_KEY: 'test', DESEARCH_API_KEY: 'test', CHUTES_API_KEY: 'test', TAO_PRICE_SAYGM_RAO: '1000', TAO_PRICE_DESEARCH_RAO: '1000' });
+  const providers = providerCatalog(config, true);
+  assert.deepEqual(providers.filter(provider => provider.status === 'ready').map(provider => provider.id), ['network', 'saygm', 'desearch']);
+  assert.equal(providers.find(provider => provider.id === 'chutes')?.status, 'unavailable');
+  assert.equal(providers.find(provider => provider.id === 'everyframe')?.status, 'external');
+  assert.equal(providers.find(provider => provider.id === 'attelier')?.status, 'needs_key');
+  config.payments!.pricesRao.chutes = '1000';
+  assert.equal(providerCatalog(config, true).find(provider => provider.id === 'chutes')?.status, 'ready');
+});
+
+test('configured SayGM uses a small default response without paid discovery or retries', async () => {
+  let calls = 0;
+  const execute = createExecutor(readConfig({ SAYGM_API_KEY: 'test', SAYGM_MODEL: 'selected-model' }), unusedNetwork, (async (_url: string, options: RequestInit) => {
+    calls++;
+    const body = JSON.parse(options.body as string);
+    assert.equal(body.model, 'selected-model');
+    assert.equal(body.max_tokens, 256);
+    return Response.json({ choices: [{ message: { content: 'Answer' } }] });
+  }) as typeof fetch);
+  await execute({ providerId: 'saygm', prompt: 'hello' });
+  assert.equal(calls, 1);
+});
