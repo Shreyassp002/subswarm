@@ -1,0 +1,13 @@
+[Unit]
+Description=Subswarm SQLite backup
+
+[Service]
+Type=oneshot
+User=subswarm
+Group=subswarm
+UMask=0077
+ExecStart=/usr/bin/python3 /opt/subswarm/current/deployments/aws/backup.py
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/subswarm

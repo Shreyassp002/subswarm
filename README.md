@@ -3,6 +3,10 @@
 A workspace and a playable world for discovering Bittensor services, submitting
 requests, and keeping useful outputs in one shared library.
 
+Live site: https://subswarm.vercel.app
+
+Deployment and operations: [AWS API and static Vercel frontend](deployments/README.md).
+
 ## Run locally
 
 Use Node.js 22 or newer and npm. From the repository root:
