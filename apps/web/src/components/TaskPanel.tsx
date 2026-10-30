@@ -132,7 +132,7 @@ export default function TaskPanel({ mode = "village", residentState, selectedUid
       {provider.inputs.filter(isPrimaryField).map(renderField)}
       {!isScan && provider.inputs.some(field => !isPrimaryField(field)) && <details className="quest-options"><summary><SlidersHorizontal size={14} />{professional ? "Request settings" : "Quest settings"}</summary>{provider.inputs.filter(field => !isPrimaryField(field)).map(renderField)}</details>}
       <div className="quest-reward"><PackageOpen size={22} /><div><span>{professional ? "OUTPUT" : "YOUR REWARD"}</span><p>{questRewards[provider.id]}</p></div></div>
-      {!isScan && !payments?.enabled && ready && <p className="field-hint">Testnet payments are not configured yet. No funds can be sent.</p>}
+      {!isScan && payments && !payments.enabled && ready && <p className="field-hint">Testnet payments are not configured yet. No funds can be sent.</p>}
       {!connected && <p className="field-hint">Reconnect before sending a request.</p>}
       {busy && !working && <p className="field-hint">Another request is underway. You can keep exploring while it finishes.</p>}
     </form> : <div className="connection-note"><div className="section-caption"><Compass size={17} /><h3>Explore this service</h3></div><div className="quest-delivery"><span>INPUT</span><p>{provider.inputDescription}</p><span>OUTPUT</span><p>{provider.outputDescription}</p></div><p>{provider.reason}</p>{website && <a className="secondary-button" href={website} target="_blank" rel="noopener noreferrer">Visit {provider.name}<ArrowUpRight size={15} /></a>}</div>}
@@ -145,7 +145,7 @@ export default function TaskPanel({ mode = "village", residentState, selectedUid
     </section>
     </div>
     {tab === 'quest' && provider.taskKind && <div className="quest-checkout">      {!ready && <details className="house-access"><summary>Currently unavailable <span>Details</span></summary><p>{provider.reason || 'This house is not connected yet.'} No payment will be taken.</p></details>}
-      <div className="quest-price"><span>{isScan ? 'Registry lookup' : professional ? 'Request price' : 'Quest price'}</span><strong>{isScan ? 'Free' : quote ? `${formatTAO(quote.amountRao)} test TAO` : price ? `${formatTAO(price)} test TAO` : 'Unavailable'}</strong></div>
+      <div className="quest-price"><span>{isScan ? 'Registry lookup' : professional ? 'Request price' : 'Quest price'}</span><strong>{isScan ? 'Free' : quote ? `${formatTAO(quote.amountRao)} test TAO` : price ? `${formatTAO(price)} test TAO` : !payments ? 'Loading...' : 'Unavailable'}</strong></div>
       {!isScan && quote && <p className="field-hint">Fixed price for these inputs.{quote.storageRetentionDays ? ` Includes ${quote.storageRetentionDays} days of storage.` : ''} Reserved when sent, charged only after the result is saved. Quote expires at {new Date(quote.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.</p>}
       {insufficient && <button className="text-button" type="button" onClick={onOpenWallet}><Wallet size={14} />Add test TAO to continue</button>}
       <button className="primary-button" form="house-quest" type="submit" disabled={!ready || busy || submitting || quoting || readingFile || (provider.taskKind === 'storage' && !values.fileBase64) || !connected || (!isScan && !payments?.enabled)}>
