@@ -91,8 +91,8 @@ Talisman, SubWallet or Polkadot.js extension wallet, sign a login message, revie
 then confirm a fixed quote for a request. The service reserves that quote
 atomically, charges after saving a successful result, and releases it on
 failure. The operator separately supplies provider API credits. Providers do
-not automatically accept TAO, and no provider credits have been provisioned
-in this checkout.
+not automatically accept TAO. The live demo uses operator-funded SayGM and
+Desearch credits, with test TAO used only for the request payment flow.
 
 Run `npm run prepare:testnet --workspace @subswarm/api` to prepare a dedicated
 local receiver, verify testnet genesis and set a deposit start block plus default
@@ -157,7 +157,7 @@ sessions do not depend on third-party cookies.
 See [third-party notices](THIRD_PARTY_NOTICES.md) for reused code and artwork.
 
 
-The local tariff is 0.001 test TAO per completed quest, a demonstration price
+The public demo tariff for SayGM and Desearch is 0.000001 test TAO per completed request, a demonstration price
 rather than a real-value exchange rate. New Hippius files include seven days
 of storage with automatic expiry cleanup. See the API README for the offline
 cost calculator, failed-request economics and setup report. Provider credentials,

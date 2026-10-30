@@ -103,9 +103,18 @@ Review logs locally without publishing credentials or user content.
 
 ## Activation boundaries
 
-The deployment keeps test-TAO deposits disabled. Connecting a wallet and
-signing a login message work independently of deposits. The API holds only
-the deposit receiver's public address, not a fund-owning private key.
+The public demo enables test-TAO deposits and paid SayGM and Desearch requests.
+Each completed request costs 1,000 rao (0.000001 test TAO). SayGM uses
+`gpt-oss-20b`, with a default output limit of 256 tokens. The shared limit remains
+20 provider attempts per UTC day and two concurrent provider jobs to protect
+prepaid API credits. These limits apply to all visitors combined, including failed
+attempts. The API holds only the receiver's public address, never its private key.
+
+Only activated providers have `TAO_PRICE_<PROVIDER>_RAO` set. When payments
+are enabled, a provider without a price remains unavailable even if its key
+exists. To activate another integration, verify its access and credit, configure
+its required settings and a positive test-TAO price, then restart only the API.
+Keep unverified provider credentials private without enabling their prices.
 
 Configured provider adapters still need funded or free-credit request checks.
 ChronoSeek requires gateway access; Attelier requires a selected model;

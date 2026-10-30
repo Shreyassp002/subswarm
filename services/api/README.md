@@ -157,8 +157,9 @@ Do not enable payments merely because this report shows configured fields.
 
 ## Pricing policy
 
-The local hackathon tariff is 0.001 test TAO per completed quest, fixed within
-each provider's input/output limits. New storage quests include seven days and
+The public demo tariff for SayGM and Desearch is 0.000001 test TAO per completed
+request, fixed within each provider's input/output limits. Other providers stay
+unavailable until access is verified and a price is activated. New storage quests include seven days and
 at most 256 KiB. Test TAO has no redemption value; this tariff demonstrates the
 payment flow and does not finance real provider usage. Provider costs come from
 the operator's separate credit budget. Request limits cap attempts, not USD cost.
