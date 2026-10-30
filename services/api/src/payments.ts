@@ -15,6 +15,7 @@ export interface PaymentConfig {
   receiver?: string;
   startBlock?: number;
   pricesRao: Record<string, string>;
+  demoCredit?: { amountRao: string; maxDailyWallets: number };
 }
 
 export function rao(value: string): bigint {
@@ -56,6 +57,7 @@ export function paymentSettings(config?: PaymentConfig): PaymentSettings {
   return {
     enabled, network: 'testnet', receiver: enabled ? walletAddress(accountId(config!.receiver!)) : null,
     genesisHash: TESTNET_GENESIS, rpcUrl: 'wss://test.finney.opentensor.ai:443', maxDepositRao: MAX_RAO.toString(), pricesRao: enabled ? config!.pricesRao : {},
+    demoCreditRao: enabled ? config?.demoCredit?.amountRao ?? '0' : '0',
     ...(!enabled ? { reason: 'Testnet TAO payments need a receiver, deposit start block, and request prices configured by the operator.' } : {}),
   };
 }

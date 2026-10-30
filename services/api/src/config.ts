@@ -66,10 +66,13 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): Config {
   }
   const hippiusBucket = env.HIPPIUS_BUCKET?.trim() || undefined;
   if (hippiusBucket && !/^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$/.test(hippiusBucket)) throw new Error('HIPPIUS_BUCKET must be an S3 bucket name.');
+  const demoCreditRao = env.TAO_DEMO_CREDIT_RAO?.trim() || '0';
+  rao(demoCreditRao);
   if (receiver) accountId(receiver);
   if (env.TAO_PAYMENTS_ENABLED && !['true', 'false'].includes(env.TAO_PAYMENTS_ENABLED)) throw new Error('TAO_PAYMENTS_ENABLED must be true or false.');
   return {
     payments: { enabled: env.TAO_PAYMENTS_ENABLED === 'true', receiver, pricesRao,
+      demoCredit: { amountRao: demoCreditRao, maxDailyWallets: positiveInteger(env.DEMO_MAX_DAILY_WALLETS, 20, 1000) },
       startBlock: env.TAO_DEPOSIT_START_BLOCK ? positiveInteger(env.TAO_DEPOSIT_START_BLOCK, 1, 4_294_967_295) : undefined },
     port: positiveInteger(env.PORT, 4100, 65535),
     webOrigin: origin.origin,

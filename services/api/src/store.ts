@@ -25,6 +25,12 @@ export class Store {
         available TEXT NOT NULL,
         reserved TEXT NOT NULL
       );
+      CREATE TABLE IF NOT EXISTS demo_credits (
+        account TEXT PRIMARY KEY REFERENCES payment_accounts(account),
+        amount TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS demo_credits_date ON demo_credits(created_at);
       CREATE TABLE IF NOT EXISTS wallet_bindings (
         session_id TEXT PRIMARY KEY,
         account TEXT NOT NULL REFERENCES payment_accounts(account),
@@ -293,13 +299,23 @@ export class Store {
     return row;
   }
 
-  bindWallet(sessionId: string, challengeId: string): WalletState {
+  bindWallet(sessionId: string, challengeId: string, demoCredit?: { amountRao: string; maxDailyWallets: number }): WalletState {
     return this.db.transaction(() => {
       const { account } = this.walletChallenge(sessionId, challengeId);
       this.db.prepare('DELETE FROM wallet_challenges WHERE session_id = ?').run(sessionId);
       this.db.prepare("INSERT OR IGNORE INTO payment_accounts (account, available, reserved) VALUES (?, '0', '0')").run(account);
       this.db.prepare('INSERT INTO wallet_bindings (session_id, account, expires_at) VALUES (?, ?, ?) ON CONFLICT(session_id) DO UPDATE SET account=excluded.account, expires_at=excluded.expires_at')
         .run(sessionId, account, Date.now() + 24 * 60 * 60_000);
+      if (demoCredit && rao(demoCredit.amountRao) > 0n && !this.db.prepare('SELECT 1 FROM demo_credits WHERE account = ?').get(account)) {
+        const now = new Date().toISOString();
+        const { count } = this.db.prepare('SELECT count(*) AS count FROM demo_credits WHERE created_at >= ?').get(`${now.slice(0, 10)}T00:00:00.000Z`) as { count: number };
+        const balance = this.walletState(sessionId);
+        const amount = rao(demoCredit.amountRao);
+        if (count < demoCredit.maxDailyWallets && rao(balance.availableRao) + rao(balance.reservedRao) + amount <= MAX_RAO) {
+          this.db.prepare('INSERT INTO demo_credits (account, amount, created_at) VALUES (?, ?, ?)').run(account, amount.toString(), now);
+          this.db.prepare('UPDATE payment_accounts SET available = ? WHERE account = ?').run((rao(balance.availableRao) + amount).toString(), account);
+        }
+      }
       return this.walletState(sessionId);
     }).immediate();
   }
@@ -342,7 +358,10 @@ export class Store {
       .all(account) as { event_id: string; amount: string; evidence: string }[];
     const requests = this.db.prepare("SELECT id, provider_id, job_id, amount, expires_at, state FROM payment_quotes WHERE account = ? AND state != 'quoted' ORDER BY expires_at DESC LIMIT 50")
       .all(account) as { id: string; provider_id: string; job_id: string; amount: string; expires_at: number; state: 'reserved' | 'settled' | 'released' }[];
+    const grant = this.db.prepare('SELECT amount, created_at FROM demo_credits WHERE account = ?').get(account) as { amount: string; created_at: string } | undefined;
+    const credits: PaymentLedgerEntry[] = grant ? [{ id: `demo:${account}`, kind: 'demo-credit', status: 'credited', amountRao: grant.amount, createdAt: grant.created_at }] : [];
     return [
+      ...credits,
       ...deposits.map((row): PaymentLedgerEntry => {
         const data = JSON.parse(row.evidence) as DepositEvidence & { creditedAt?: string };
         return { id: row.event_id, kind: 'deposit', status: 'credited', amountRao: row.amount, createdAt: data.creditedAt ?? '', blockHash: data.blockHash };

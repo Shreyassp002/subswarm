@@ -12,6 +12,7 @@ export interface PaymentSettings {
   rpcUrl: string;
   maxDepositRao: string;
   pricesRao: Record<string, string>;
+  demoCreditRao?: string;
   reason?: string;
 }
 
@@ -25,7 +26,7 @@ export interface PaymentQuote {
 
 export interface PaymentLedgerEntry {
   id: string;
-  kind: 'deposit' | 'request';
+  kind: 'deposit' | 'request' | 'demo-credit';
   status: 'credited' | 'reserved' | 'charged' | 'released';
   amountRao: string;
   createdAt: string;

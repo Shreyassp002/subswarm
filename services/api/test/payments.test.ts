@@ -201,3 +201,65 @@ test('wallet signatures, nonce replay, session binding and paid job boundary wor
     assert.equal((await post('/v1/quotes', input)).status, 401);
   } finally { await drain(); store.close(); }
 });
+
+test('sponsored credit is once per account across sessions and restarts, with a shared daily cap', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'subswarm-demo-'));
+  const path = join(dir, 'ledger.sqlite');
+  let store = new Store(path);
+  const grant = { amountRao: '1000', maxDailyWallets: 1 };
+  const session = store.createSession().session.id;
+  try {
+    let challenge = store.createWalletChallenge(session, account, origin);
+    assert.equal(store.bindWallet(session, challenge.id, grant).availableRao, '1000');
+    const job = reserve(store, session, '1000');
+    store.startJob(session, job.id);
+    store.finishJob(session, job.id, { title: 'Done', text: 'Answer' });
+    assert.equal(store.walletState(session).availableRao, '0');
+    assert.throws(() => reserve(store, session, '1000'), /balance is too low/);
+    store.close();
+    store = new Store(path);
+    const secondSession = store.createSession().session.id;
+    challenge = store.createWalletChallenge(secondSession, encodeAddress(account, 0), origin);
+    assert.equal(store.bindWallet(secondSession, challenge.id, grant).availableRao, '0');
+    assert.equal(store.walletLedger(secondSession).filter(entry => entry.kind === 'demo-credit').length, 1);
+    const newcomer = store.createSession().session.id;
+    challenge = store.createWalletChallenge(newcomer, receiver, origin);
+    assert.equal(store.bindWallet(newcomer, challenge.id, grant).availableRao, '0');
+    assert.equal(store.walletLedger(newcomer).length, 0);
+  } finally { store.close(); rmSync(dir, { recursive: true }); }
+});
+
+test('sponsored credit defaults off and cannot overflow existing available or reserved balance', () => {
+  const store = new Store(':memory:');
+  try {
+    assert.equal(readConfig({}).payments?.demoCredit?.amountRao, '0');
+    assert.throws(() => readConfig({ TAO_DEMO_CREDIT_RAO: '-1' }));
+    assert.throws(() => readConfig({ DEMO_MAX_DAILY_WALLETS: '0' }));
+    const session = funded(store, MAX_RAO.toString());
+    reserve(store, session, '1');
+    const challenge = store.createWalletChallenge(session, account, origin);
+    store.bindWallet(session, challenge.id, { amountRao: '1', maxDailyWallets: 20 });
+    assert.equal(store.walletState(session).availableRao, (MAX_RAO - 1n).toString());
+    assert.equal(store.walletLedger(session).filter(entry => entry.kind === 'demo-credit').length, 0);
+  } finally { store.close(); }
+});
+
+test('demo credits are granted only after a valid wallet signature', async () => {
+  await cryptoWaitReady();
+  const pair = sr25519PairFromSeed(new Uint8Array(32).fill(13));
+  const address = encodeAddress(pair.publicKey, 42);
+  const config = readConfig({ TAO_PAYMENTS_ENABLED: 'true', TAO_TESTNET_RECEIVER: receiver, TAO_DEPOSIT_START_BLOCK: '100', TAO_PRICE_SAYGM_RAO: '1000', TAO_DEMO_CREDIT_RAO: '1000' });
+  const { app, store } = createApp({ config });
+  try {
+    const session = await app.request('/v1/session');
+    const cookie = session.headers.get('set-cookie')!.split(';')[0];
+    const post = (path: string, data: unknown) => app.request(path, { method: 'POST', headers: { Cookie: cookie, Origin: origin, 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+    const { challenge } = await (await post('/v1/wallet/challenge', { address })).json();
+    assert.equal((await post('/v1/wallet/verify', { challengeId: challenge.id, signature: `0x${'00'.repeat(64)}` })).status, 401);
+    const signature = `0x${Buffer.from(sr25519Sign(new TextEncoder().encode(`<Bytes>${challenge.message}</Bytes>`), pair)).toString('hex')}`;
+    const result = await post('/v1/wallet/verify', { challengeId: challenge.id, signature });
+    assert.equal(result.status, 200);
+    assert.equal((await result.json()).wallet.availableRao, '1000');
+    assert.equal((await post('/v1/wallet/verify', { challengeId: challenge.id, signature })).status, 401);
+  } finally { store.close(); }
+});

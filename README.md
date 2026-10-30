@@ -164,3 +164,20 @@ cost calculator, failed-request economics and setup report. Provider credentials
 account access, live provider/wallet verification and deployment remain separate
 from local implementation checks. EveryFrame and Ridges remain external services
 until compatible customer access is available.
+
+
+## Sponsored first request
+
+The public demo grants 1,000 rao of internal request credit once per verified
+wallet, enough for one completed SayGM or Desearch request at the current demo
+price. No on-chain TAO or network fee is needed for that first request. The
+wallet must sign its login challenge; a supplied address alone earns nothing.
+Credits appear as `Sponsored demo credit`, separately from real deposits.
+Reconnects, new browser sessions, alternate SS58 encodings and restarts do not
+reissue the grant. Failed requests release the reservation for another attempt.
+
+`TAO_DEMO_CREDIT_RAO=1000` and `DEMO_MAX_DAILY_WALLETS=20` enable this demo
+allocation. Zero credit disables it. At most 20 wallets are credited per UTC day;
+the separate shared provider cap remains 20 attempts per UTC day. This is a
+wallet-level demo allowance, not proof that wallets belong to distinct people.
+After the credit is spent, users may add a small prepaid test-TAO balance.

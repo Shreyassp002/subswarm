@@ -98,7 +98,7 @@ export function createApp(options: AppOptions = {}) {
     const sessionId = c.get('session').id;
     const challenge = store.walletChallenge(sessionId, challengeId);
     if (!await verifyWalletSignature(challenge.message, signature, challenge.account)) throw new ApiFailure('signature_invalid', 'The wallet signature did not match this login challenge.', 401);
-    return c.json({ wallet: store.bindWallet(sessionId, challengeId) });
+    return c.json({ wallet: store.bindWallet(sessionId, challengeId, payment.enabled ? config.payments?.demoCredit : undefined) });
   });
   app.post('/v1/wallet/disconnect', (c) => c.json({ wallet: store.disconnectWallet(c.get('session').id) }));
   app.post('/v1/wallet/deposits', async (c) => {
