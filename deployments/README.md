@@ -20,11 +20,10 @@ Use the existing owner's Vercel project `subswarm`. Verify `vercel whoami` and
 the linked project's team before deploying. Do not create a project in a
 different account. The local `.vercel` directory is ignored.
 
-The Git repository is https://github.com/Shreyassp002/subswarm. Connect it in
-the existing Vercel project's Git settings and select `main` as the production
-branch. Pushes to `main` then publish the frontend automatically; AWS backend
-releases remain separate. The Vercel GitHub app must have access to this private
-repository before automatic deployment can start.
+The existing Vercel project is connected to
+https://github.com/Shreyassp002/subswarm with `main` as its production branch.
+Pushes to `main` publish the frontend automatically; AWS backend releases remain
+separate. Keep the Vercel GitHub app authorized for this private repository.
 
 The root `vercel.json` supports a source build with `NEXT_PUBLIC_API_URL=/`.
 It installs only frontend and shared workspace dependencies. Node.js is pinned
