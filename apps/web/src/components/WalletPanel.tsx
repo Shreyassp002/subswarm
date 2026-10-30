@@ -34,6 +34,8 @@ export default function WalletPanel({ mode = "village", onClose, onChanged }: Pr
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
+  const lowestPrice = Object.values(payments?.pricesRao ?? {}).map(BigInt).reduce<bigint | null>((lowest, price) => price > BigInt(0) && (lowest === null || price < lowest) ? price : lowest, null);
+
   useEffect(() => {
     panel.current?.focus({ preventScroll: true });
     const detect = () => setInstalled(installedWallets());
@@ -105,7 +107,7 @@ export default function WalletPanel({ mode = "village", onClose, onChanged }: Pr
       setAccounts([]);
       setPreview(null);
       await refresh();
-      setNotice("Wallet connected. The signed message does not transfer funds.");
+      setNotice("Wallet connected. Add a small test-TAO balance below to run requests. Connecting does not transfer funds.");
     });
   }
 
@@ -175,12 +177,13 @@ export default function WalletPanel({ mode = "village", onClose, onChanged }: Pr
         <p className="wallet-extension">Use a Substrate account. You never enter your recovery phrase here.</p>
       </div>}
       <div className="wallet-assurance"><ShieldCheck size={15} /><span>Connection only signs a message. No funds move.</span></div>
-      {payments && !payments.enabled && <div className="purse-closed"><Wallet size={18} /><div><strong>Top-ups open soon</strong><p>You can connect now. Deposits are not available yet.</p></div></div>}
+      {payments && !payments.enabled && <div className="purse-closed"><Wallet size={18} /><div><strong>Top-ups unavailable</strong><p>You can connect now. Deposits are not available yet.</p></div></div>}
       <details className="quiet-details"><summary>{professional ? "How your balance works" : "How your purse works"}</summary><p>Prepay with test TAO to run quests. Provider credits are paid separately by Subswarm. Funds are reserved when you send a quest and charged only after a successful result is saved.</p><p>Unused prepaid funds stay in your Subswarm balance. On-chain withdrawals are not available.</p>{payments && !payments.enabled && payments.reason && <p>{payments.reason}</p>}</details>
       {pending && <div className="connection-note"><h3>Deposit awaiting verification</h3><p>{formatTAO(pending.amountRao)} test TAO. Check this transaction before sending another deposit.</p><code className="wallet-address">{pending.txHash}</code><button className="secondary-button" disabled={!!busy || !wallet?.address || !payments?.enabled} onClick={checkPending}>Check pending deposit</button><p className="field-hint">If you return later, this browser keeps the transaction reference. Connect the same wallet to recover it.</p></div>}
       {wallet?.address && payments?.enabled && !pending && !invalidPending && <form className="quest-form" onSubmit={reviewDeposit}>
-        <div className="panel-rule" /><h3>Add test TAO</h3><label htmlFor="deposit-amount">Amount in test TAO</label><input id="deposit-amount" inputMode="decimal" autoComplete="off" value={amount} onChange={(event) => { setAmount(event.target.value); setPreview(null); }} placeholder="0.1" disabled={!!busy} required maxLength={30} />
-        <p className="field-hint">Maximum {formatTAO(payments.maxDepositRao)} test TAO per deposit. The network fee is paid separately.</p>
+        <div className="panel-rule" /><h3>Add test TAO</h3><label htmlFor="deposit-amount">Amount in test TAO</label><input id="deposit-amount" inputMode="decimal" autoComplete="off" value={amount} onChange={(event) => { setAmount(event.target.value); setPreview(null); }} placeholder="0.00001" disabled={!!busy} required maxLength={30} />
+        {lowestPrice !== null && <><div className="deposit-presets" aria-label="Small top-up amounts">{[10, 25, 50].map(count => <button key={String(count)} type="button" className="secondary-button" disabled={!!busy} onClick={() => { setAmount(formatTAO(lowestPrice * BigInt(count))); setPreview(null); }}>{formatTAO(lowestPrice * BigInt(count))}</button>)}</div><p className="field-hint">Requests start at {formatTAO(lowestPrice)} test TAO. The smallest preset covers 10 requests at that price.</p></>}
+        <p className="field-hint">Use Bittensor testnet tokens only. The network fee is paid separately and shown before you sign. One small top-up can cover several requests.</p>
         <button className="secondary-button" type="submit" disabled={!!busy || !amount.trim()}>Review deposit</button>
         {preview && <div className="deposit-review"><h3>Review testnet transfer</h3><dl><dt>Amount</dt><dd>{formatTAO(preview.amountRao)} test TAO</dd><dt>Estimated network fee</dt><dd>{formatTAO(preview.feeRao)} test TAO</dd><dt>Wallet free balance</dt><dd>{formatTAO(preview.freeRao)} test TAO</dd><dt>Minimum balance to retain</dt><dd>{formatTAO(preview.keepAliveRao)} test TAO</dd><dt>Recipient</dt><dd><code className="wallet-address">{preview.receiver}</code></dd></dl><p className="field-hint">Test tokens only. This is prepaid quest credit, with no on-chain withdrawals. Confirming opens your wallet to sign the transfer. Credit arrives after finality and verification.</p><button className="primary-button" type="button" onClick={confirmDeposit} disabled={!!busy}>Confirm testnet deposit</button></div>}
       </form>}

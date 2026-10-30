@@ -42,7 +42,8 @@ export default function TaskPanel({ mode = "village", residentState, selectedUid
   const website = safeUrl(provider.website);
   const price = payments?.pricesRao[provider.id];
   const isPrimaryField = (field: ProviderInputField) => isScan || field.required || field.type === 'textarea' || field.type === 'url';
-  const insufficient = !!quote && BigInt(wallet?.availableRao ?? '0') < BigInt(quote.amountRao);
+  const requestPrice = quote?.amountRao ?? price;
+  const insufficient = !!wallet?.address && !!requestPrice && BigInt(wallet.availableRao) < BigInt(requestPrice);
 
   useEffect(() => { panel.current?.focus({ preventScroll: true }); }, []);
 
@@ -60,7 +61,7 @@ export default function TaskPanel({ mode = "village", residentState, selectedUid
     event.preventDefault();
     if (!ready || busy || submitting || quoting || readingFile || !connected) return;
     if (isScan) { await onSubmit(input()); return; }
-    if (!wallet?.address) { onOpenWallet(); return; }
+    if (!wallet?.address || insufficient) { onOpenWallet(); return; }
     setQuoteError(null);
     if (!quote || Date.parse(quote.expiresAt) <= Date.now()) {
       setQuoting(true);
@@ -142,13 +143,13 @@ export default function TaskPanel({ mode = "village", residentState, selectedUid
     </div>}
     </section>
     </div>
-    {tab === 'quest' && provider.taskKind && <div className="quest-checkout">      {!ready && <details className="house-access"><summary>{professional ? "Connection needed" : "Quests opening soon"} <span>Details</span></summary><p>{provider.reason || 'This house is not connected yet.'} No payment will be taken.</p></details>}
-      <div className="quest-price"><span>{isScan ? 'Registry lookup' : professional ? 'Request price' : 'Quest price'}</span><strong>{isScan ? 'Free' : quote ? `${formatTAO(quote.amountRao)} test TAO` : price ? `${formatTAO(price)} test TAO` : 'Coming soon'}</strong></div>
+    {tab === 'quest' && provider.taskKind && <div className="quest-checkout">      {!ready && <details className="house-access"><summary>Currently unavailable <span>Details</span></summary><p>{provider.reason || 'This house is not connected yet.'} No payment will be taken.</p></details>}
+      <div className="quest-price"><span>{isScan ? 'Registry lookup' : professional ? 'Request price' : 'Quest price'}</span><strong>{isScan ? 'Free' : quote ? `${formatTAO(quote.amountRao)} test TAO` : price ? `${formatTAO(price)} test TAO` : 'Unavailable'}</strong></div>
       {!isScan && quote && <p className="field-hint">Fixed price for these inputs.{quote.storageRetentionDays ? ` Includes ${quote.storageRetentionDays} days of storage.` : ''} Reserved when sent, charged only after the result is saved. Quote expires at {new Date(quote.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}.</p>}
       {insufficient && <button className="text-button" type="button" onClick={onOpenWallet}><Wallet size={14} />Add test TAO to continue</button>}
-      <button className="primary-button" form="house-quest" type="submit" disabled={!ready || busy || submitting || quoting || readingFile || (provider.taskKind === 'storage' && !values.fileBase64) || !connected || insufficient || (!isScan && !payments?.enabled)}>
+      <button className="primary-button" form="house-quest" type="submit" disabled={!ready || busy || submitting || quoting || readingFile || (provider.taskKind === 'storage' && !values.fileBase64) || !connected || (!isScan && !payments?.enabled)}>
         {submitting || working || quoting ? <><LoaderCircle size={16} className="spin" />{quoting ? 'Getting your quote' : job?.status === 'queued' ? 'Request queued' : 'Working on your request'}</>
-          : <><Compass size={16} />{!ready ? professional ? 'Connection needed' : 'Quests opening soon' : isScan ? 'Explore the network' : !wallet?.address ? 'Connect wallet' : quote ? `Confirm ${formatTAO(quote.amountRao)} test TAO` : professional ? 'Review request price' : 'Review quest price'}<ChevronRight size={16} /></>}
+          : <><Compass size={16} />{!ready ? 'Currently unavailable' : isScan ? 'Explore the network' : !wallet?.address ? 'Connect wallet' : insufficient ? 'Add test TAO' : quote ? `Confirm ${formatTAO(quote.amountRao)} test TAO` : professional ? 'Review request price' : 'Review quest price'}<ChevronRight size={16} /></>}
       </button>
     </div>}
 

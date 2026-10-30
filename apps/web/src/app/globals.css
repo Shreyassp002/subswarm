@@ -477,3 +477,6 @@ button, p, h1, h2, h3, h4 { margin: 0; }
 .wallet-choice-title { font-weight: 700; }
 .connected-extension { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 13px; margin: 10px 0; }
 .connected-extension > span { font-size: 11px; opacity: .7; }
+
+.deposit-presets { display: flex; flex-wrap: wrap; gap: 8px; }
+.deposit-presets .secondary-button { flex: 1; min-width: 90px; padding: 9px 12px; font-variant-numeric: tabular-nums; }
