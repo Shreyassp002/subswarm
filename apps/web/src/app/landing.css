@@ -16,7 +16,7 @@
 .landing .brand-button { font-size: 12px; }
 .village-entry { position: relative; display: inline-flex; height: 48px; isolation: isolate; -webkit-tap-highlight-color: transparent; }
 .village-entry::before { content: ""; position: absolute; inset: -12px -15px; background: radial-gradient(ellipse, #ff90e34a, transparent 72%); pointer-events: none; transition: opacity .2s; opacity: .65; }
-.village-entry-face { position: relative; display: flex; align-items: center; gap: 12px; padding: 0 16px; background: #f4efff; color: #342365; font-size: 12px; white-space: nowrap; border-top: 3px solid white; border-bottom: 3px solid #c5b6e8; box-shadow: 3px 0 #f4efff, -3px 0 #f4efff, 0 4px #342365, 3px 3px #342365, -3px 3px #342365; transition: transform .18s steps(3), background .18s; }
+.village-entry-face { position: relative; display: flex; align-items: center; gap: 12px; padding: 0 16px; background: #ffe53b; color: #29174e; font-size: 12px; white-space: nowrap; border-top: 3px solid #fff28c; border-bottom: 3px solid #d6a72b; box-shadow: 3px 0 #ffe53b, -3px 0 #ffe53b, 0 4px #342365, 3px 3px #342365, -3px 3px #342365; transition: transform .18s steps(3), background .18s; }
 .village-entry-door { width: 20px; height: 24px; flex: none; }
 .village-entry-arrow { width: 10px; height: 10px; margin-left: 2px; transition: transform .18s steps(3); }
 .village-entry-light { animation: village-portal 3.6s steps(3) infinite; }
@@ -29,7 +29,7 @@
 .village-entry-sparks i:nth-child(5) { left: 24%; bottom: 2px; animation-delay: -2s; }
 .village-entry-sparks i:nth-child(6) { left: 0; top: 55%; background: #ff91d0; animation-delay: -.2s; }
 .village-entry:focus-visible { outline: 2px solid var(--yellow); outline-offset: 9px; }
-.village-entry:is(:hover, :focus-visible) .village-entry-face { transform: translateY(-3px); background: #fff8d9; }
+.village-entry:is(:hover, :focus-visible) .village-entry-face { transform: translateY(-3px); background: #ffd54a; }
 .village-entry:is(:hover, :focus-visible) .village-entry-arrow { transform: translateX(3px); }
 .village-entry:is(:hover, :focus-visible)::before { opacity: 1; }
 .village-entry:active .village-entry-face { transform: translateY(2px); }
