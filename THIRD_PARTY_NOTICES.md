@@ -72,3 +72,13 @@ The visual network routes are decorative, not real provider locations or traffic
 The 404-GEN mark comes from its documented GitHub organization,
 https://github.com/404-Repo, avatar https://avatars.githubusercontent.com/u/154099142?s=200&v=4.
 ChronoSeek uses a capability icon because no verified brand asset was available.
+
+## Provider identity marks
+
+The following provider marks identify their respective services; they do not imply endorsement.
+
+- BitMind: `apps/web/public/logos/bitmind.png`, retrieved from https://bitmind.ai/icons/favicon.png.
+- Zeus: `apps/web/public/logos/zeus.png`, retrieved from https://docs.zeussubnet.com/icon.png.
+- Ditto: `apps/web/public/logos/ditto.svg`, retrieved from https://heyditto.ai/assets/brand/app-icon.svg.
+
+The backend uses the official Model Context Protocol TypeScript SDK 1.32.2 (MIT) for Ditto's documented Streamable HTTP API. No provider tokens enter the frontend.

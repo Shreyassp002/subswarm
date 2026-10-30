@@ -24,18 +24,18 @@ const worldRect = (x: number, y: number, width: number, height: number): WorldRe
 export const BUILDINGS: VillageBuilding[] = [
   { id: 'saygm', number: '01', name: 'SayGM', ability: 'TEXT & CHAT', color: 0x79d9ef, entrance: worldPoint(148, 316), sign: worldPoint(172, 96), bounds: worldRect(63, 109, 219, 191) },
   { id: 'desearch', number: '02', name: 'Desearch', ability: 'WEB SEARCH', color: 0xabe4a1, entrance: worldPoint(445, 321), sign: worldPoint(445, 132), bounds: worldRect(346, 146, 194, 157) },
-  { id: '404gen', number: '03', name: '404-GEN', ability: '3D CREATION', color: 0xf2bd7f, entrance: worldPoint(141, 566), sign: worldPoint(153, 368), bounds: worldRect(54, 381, 198, 169) },
-  { id: 'chutes', number: '04', name: 'Chutes', ability: 'AI MODELS', color: 0xc99df0, entrance: worldPoint(449, 574), sign: worldPoint(442, 350), bounds: worldRect(340, 367, 203, 190) },
-  { id: 'everyframe', number: '05', name: 'EveryFrame', ability: 'MEDIA STUDIO', color: 0x95dfd2, entrance: worldPoint(1516, 369), sign: worldPoint(1503, 173), bounds: worldRect(1401, 185, 204, 166) },
-  { id: 'hippius', number: '06', name: 'Hippius', ability: 'CLOUD STORAGE', color: 0xead49b, entrance: worldPoint(1225, 322), sign: worldPoint(1246, 130), bounds: worldRect(1158, 144, 177, 161) },
-  { id: 'ridges', number: '07', name: 'Ridges', ability: 'CODING AGENTS', color: 0xead49b, entrance: worldPoint(1359, 704), sign: worldPoint(1361, 537), bounds: worldRect(1268, 551, 186, 137) },
-  { id: 'attelier', number: '08', name: 'Attelier', ability: 'CREATIVE TOOLS', color: 0xcfa3e9, entrance: worldPoint(1238, 514), sign: worldPoint(1248, 343), bounds: worldRect(1156, 357, 183, 141) },
-  { id: 'chronoseek', number: '09', name: 'ChronoSeek', ability: 'VIDEO SEARCH', color: 0xcda5f1, entrance: worldPoint(1519, 587), sign: worldPoint(1515, 387), bounds: worldRect(1412, 401, 205, 170) },
-  { id: 'network', number: '10', name: 'Network', ability: 'CHAIN EXPLORER', color: 0x9de6d6, entrance: worldPoint(855, 516), sign: worldPoint(855, 350), bounds: worldRect(794, 367, 128, 128) },
+  { id: 'bitmind', number: '03', name: 'BitMind', ability: 'IMAGE CHECKS', color: 0xf2bd7f, entrance: worldPoint(141, 566), sign: worldPoint(153, 368), bounds: worldRect(54, 381, 198, 169) },
+  { id: 'zeus', number: '04', name: 'Zeus', ability: 'WEATHER', color: 0xc99df0, entrance: worldPoint(449, 574), sign: worldPoint(442, 350), bounds: worldRect(340, 367, 203, 190) },
+  { id: 'ditto', number: '05', name: 'Ditto', ability: 'SAVE MEMORIES', color: 0xead49b, entrance: worldPoint(1225, 322), sign: worldPoint(1246, 130), bounds: worldRect(1158, 144, 177, 161) },
+  { id: 'network', number: '06', name: 'Network', ability: 'CHAIN EXPLORER', color: 0x9de6d6, entrance: worldPoint(855, 516), sign: worldPoint(855, 350), bounds: worldRect(794, 367, 128, 128) },
 ]
 
 export const COLLISIONS: WorldRect[] = [
   ...BUILDINGS.map(building => building.bounds),
+  worldRect(1401, 185, 204, 166),
+  worldRect(1268, 551, 186, 137),
+  worldRect(1156, 357, 183, 141),
+  worldRect(1412, 401, 205, 170),
   worldRect(0, 0, 1680, 25),
   worldRect(0, 0, 28, 944),
   worldRect(1650, 0, 30, 944),

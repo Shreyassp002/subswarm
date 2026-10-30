@@ -19,7 +19,7 @@ const WorldCanvas = dynamic(() => import("@/components/WorldCanvas"), {
   loading: () => <div className="world-loading"><LoaderCircle size={22} className="spin" /><span>Unfolding your little world...</span></div>,
 });
 
-const names: Record<ProviderId, string> = { saygm: "SayGM", desearch: "Desearch", "404gen": "404 GEN", chutes: "Chutes", everyframe: "EveryFrame", hippius: "Hippius", ridges: "Ridges", attelier: "Attelier", chronoseek: "ChronoSeek", network: "Network" };
+const names: Record<ProviderId, string> = { bitmind: "BitMind", zeus: "Zeus", ditto: "Ditto", saygm: "SayGM", desearch: "Desearch", "404gen": "404 GEN", chutes: "Chutes", everyframe: "EveryFrame", hippius: "Hippius", ridges: "Ridges", attelier: "Attelier", chronoseek: "ChronoSeek", network: "Network" };
 
 export default function Village() {
   const { selectedUid, walletOpen, setWalletOpen, wallet, payments, session, providers, jobs, artifacts, snapshot, chainUnavailable, selectedProvider, setSelectedProvider, directoryOpen, setDirectoryOpen, journalOpen, setJournalOpen, journalJobId, helpOpen, setHelpOpen, currentJob, connection, error, taskError, submitting, setReload, residents, refreshResidents, residentSnapshots, refreshWallet, selectProvider, selectResident, openWallet, openJournal, sendQuest, selected, selectedJob, busy } = useWorkspace();
@@ -42,7 +42,7 @@ export default function Village() {
         {directoryOpen && <aside className="directory parchment panel-enter" id="district-directory" aria-labelledby="directory-title">
           <div className="directory-heading"><h2 id="directory-title">Districts</h2><button className="icon-button ink" aria-label="Close map directory" onClick={() => setDirectoryOpen(false)}><X size={17} /></button></div>
           <label className="directory-search">Find a subnet<input type="search" placeholder="Name, number or capability" value={search} onChange={event => setSearch(event.target.value)} /></label>
-          <div className="provider-list">{providerOrder.filter(id => { const provider = providers.find(item => item.id === id); return provider ? matchesProvider(provider, search) : !search; }).map((id) => {
+          <div className="provider-list">{providerOrder.filter(id => { const provider = providers.find(item => item.id === id); return provider ? matchesProvider(provider, search) : false; }).map((id) => {
             const provider = providers.find((entry) => entry.id === id);
             const display = districts[id];
             return <button key={id} className="provider-row" onClick={() => selectProvider(id)} disabled={!provider} title={provider ? statusLabel[provider.status] : "Waiting for the village API"}><span className="district-number">{display.number}</span><ProviderLogo id={id} size={22} /><span className="district-name">{provider?.name || names[id]}</span>{provider?.status === "ready" ? <i className="ready-dot" aria-label="Ready" /> : <ChevronRight size={12} className="district-chevron" />}</button>;

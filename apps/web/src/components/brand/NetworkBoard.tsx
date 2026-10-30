@@ -6,10 +6,10 @@ import { Board } from "@/lib/brand/board";
 const stations = [
   { id: "text", name: "Text", x: .23, y: .3 },
   { id: "search", name: "Search", x: .51, y: .24 },
-  { id: "media", name: "Media", x: .77, y: .38 },
-  { id: "storage", name: "Storage", x: .66, y: .54 },
-  { id: "code", name: "Code", x: .31, y: .63 },
-  { id: "3d", name: "3D", x: .84, y: .75 },
+  { id: "media", name: "Weather", x: .77, y: .38 },
+  { id: "storage", name: "Memory", x: .66, y: .54 },
+  { id: "code", name: "Images", x: .31, y: .63 },
+  { id: "3d", name: "Network", x: .84, y: .75 },
 ];
 
 export default function NetworkBoard() {

@@ -508,3 +508,14 @@ button, p, h1, h2, h3, h4 { margin: 0; }
 .markdown-body .contains-task-list { list-style: none; padding-left: .25em; }
 .markdown-body .task-list-item input { margin-right: .5em; }
 .markdown-preview { max-height: 16em; overflow: hidden; }
+
+.weather-hours { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; margin: 16px 0; }
+.weather-hour { padding: 14px; border: 1px solid #9b835640; border-radius: 8px; background: #fff8e580; }
+.weather-hour time { display: block; font-size: 12px; opacity: .8; }
+.weather-hour strong { display: block; margin-top: 8px; font-size: 24px; }
+.weather-hour small { font-size: 14px; }
+.weather-result code { display: block; overflow-wrap: anywhere; font-size: 11px; }
+.detection-confidence { display: flex; align-items: baseline; gap: 10px; margin: 18px 0; }
+.detection-confidence strong { font-size: 36px; }
+.detection-confidence span { font-size: 12px; }
+.memory-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 18px; }

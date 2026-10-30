@@ -40,9 +40,37 @@ function StoredFile({ block }: { block: Extract<ResultBlock, { type: 'stored-fil
   </section>;
 }
 
+function SavedMemory({ block }: { block: Extract<ResultBlock, { type: 'memory' }> }) {
+  const [text, setText] = useState(block.text);
+  const [state, setState] = useState<'ready' | 'loading' | 'confirm' | 'deleting' | 'deleted'>('ready');
+  const [error, setError] = useState('');
+  const [retrieved, setRetrieved] = useState(false);
+  async function retrieve() {
+    setState('loading'); setError('');
+    try { const result = await api<{ text: string }>(`/v1/jobs/${block.jobId}/memory`, {}, 65_000); setText(result.text); setRetrieved(true); }
+    catch (failure) { setError(failure instanceof Error ? failure.message : 'Could not retrieve this note.'); }
+    finally { setState('ready'); }
+  }
+  async function remove() {
+    setState('deleting'); setError('');
+    try {
+      await api(`/v1/jobs/${block.jobId}/memory/delete`, { method: 'POST', body: '{}' }, 65_000);
+      setText(''); setState('deleted'); window.dispatchEvent(new Event('subswarm:records-changed'));
+    } catch (failure) { setError(failure instanceof Error ? failure.message : 'Could not delete this note.'); setState('confirm'); }
+  }
+  if (state === 'deleted') return <p role="status">This note has been deleted.</p>;
+  return <section className="memory-result"><p className="result-model">{retrieved ? 'Retrieved from Ditto' : 'Saved with Ditto'}</p><MarkdownText>{text}</MarkdownText>
+    {state === 'confirm' || state === 'deleting' ? <div className="storage-confirm"><p>Delete this note from Ditto and your saved output? The request receipt will remain.</p><button className="secondary-button" disabled={state === 'deleting'} onClick={() => void remove()}>{state === 'deleting' ? 'Deleting...' : 'Delete note'}</button><button className="text-button" disabled={state === 'deleting'} onClick={() => setState('ready')}>Keep note</button></div> : <div className="memory-actions"><button className="secondary-button" disabled={state === 'loading'} onClick={() => void retrieve()}>{state === 'loading' ? 'Retrieving...' : 'Retrieve from Ditto'}</button><button className="text-button" disabled={state === 'loading'} onClick={() => setState('confirm')}><Trash2 size={14} />Delete note</button></div>}
+    {error && <p className="error-note" role="alert">{error}</p>}
+  </section>;
+}
+
 export default function ResultView({ result, compact = false }: { result: JobResult; compact?: boolean }) {
   if (!result.blocks?.length) return <MarkdownText compact={compact}>{result.text}</MarkdownText>;
   return <div className="result-blocks">{result.blocks.map((block, index) => {
+    if (block.type === 'memory') return <SavedMemory key={block.jobId} block={block} />;
+    if (block.type === 'detection') return <section key={index} className="detection-result"><p className="result-model">BitMind assessment / {block.fileName}</p><h3>{block.isAI ? 'Likely AI-generated' : 'Likely not AI-generated'}</h3><div className="detection-confidence"><strong>{(block.confidence * 100).toFixed(1)}%</strong><span>model confidence</span></div><p className="field-hint">An automated assessment, not proof of authenticity. Editing, compression and unfamiliar image styles can affect the result.</p></section>;
+    if (block.type === 'weather') return <section key={index} className="weather-result"><p className="result-model">Zeus / {block.latitude}, {block.longitude}</p><h3>Temperature forecast</h3><p className="field-hint">Forecast reference: {new Date(block.referenceTime).toLocaleString()}. These are forecast values, not live observations.</p><div className="weather-hours">{block.times.map((time, i) => <div className="weather-hour" key={time}><time dateTime={time}>{new Date(time).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</time><strong>{block.celsius[i].toFixed(1)}<small> °C</small></strong></div>)}</div>{block.provenance && <details className="quiet-details"><summary>Provider forecast source</summary><p className="field-hint">Source metadata supplied by Zeus. This is not a live miner competition.</p><code>{block.provenance}</code></details>}</section>;
     if (block.type === 'stored-file') return <StoredFile key={block.jobId} block={block} />;
     if (block.type === 'media') return <section key={index} className="media-results">{block.items.map((item, i) => {
       const url = downloadUrl(item.url);

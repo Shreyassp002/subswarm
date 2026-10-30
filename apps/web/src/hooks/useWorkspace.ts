@@ -53,6 +53,12 @@ export function useWorkspace() {
   }, []);
 
   useEffect(() => {
+    const refresh = () => { void refreshRecords().catch(() => {}); };
+    window.addEventListener('subswarm:records-changed', refresh);
+    return () => window.removeEventListener('subswarm:records-changed', refresh);
+  }, [refreshRecords]);
+
+  useEffect(() => {
     const controller = new AbortController();
     async function load() {
       setConnection("loading");

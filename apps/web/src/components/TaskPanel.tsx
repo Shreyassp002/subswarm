@@ -32,7 +32,7 @@ export default function TaskPanel({ mode = "village", residentState, selectedUid
   const [quoteError, setQuoteError] = useState<string | null>(null);
   const [tab, setTab] = useState<'quest' | 'residents'>(selectedUid === null ? 'quest' : 'residents');
   const display = districts[provider.id];
-  const house = BUILDINGS.find(building => building.id === provider.id)!;
+  const house = BUILDINGS.find(building => building.id === provider.id) ?? BUILDINGS.find(building => building.id === 'network')!;
   const centerX = (house.bounds.x + house.bounds.width / 2) / WORLD_SCALE;
   const centerY = (house.bounds.y + house.bounds.height / 2) / WORLD_SCALE;
   const professional = mode === "workspace";
@@ -77,6 +77,7 @@ export default function TaskPanel({ mode = "village", residentState, selectedUid
     setQuote(null); setQuoteError(null);
     setValues(previous => ({ ...previous, fileName: '', fileBase64: '' }));
     if (!file) return;
+    if (provider.id === 'bitmind' && !['image/png', 'image/jpeg'].includes(file.type)) { setQuoteError('Choose a PNG or JPEG image.'); return; }
     if (!file.size || file.size > 256 * 1024 || !/^[a-zA-Z0-9][a-zA-Z0-9._ -]{0,119}$/.test(file.name)) {
       setQuoteError('Choose a non-empty file up to 256 KiB. Use a filename with letters, numbers, spaces, dots, underscores or hyphens.');
       return;
@@ -95,13 +96,13 @@ export default function TaskPanel({ mode = "village", residentState, selectedUid
     const id = `quest-${field.key}`;
     const props = { id, name: field.key, required: field.required, disabled: busy || submitting || quoting || readingFile, value: values[field.key] ?? '', 'aria-describedby': field.description ? `${id}-hint` : undefined };
     return <div className={`quest-field field-${field.type}`} key={field.key}><label htmlFor={id}>{field.label}{!field.required && <span> optional</span>}</label>
-      {field.type === 'file' ? <div className="file-picker"><input id={id} name={field.key} type="file" required={field.required} disabled={busy || submitting || quoting || readingFile} aria-describedby={`${id}-hint`} onChange={event => void chooseFile(event.target.files?.[0])} /><small>{readingFile ? 'Reading your file...' : values.fileName ? `${values.fileName} is ready to store privately.` : 'Choose a file from your device'}</small></div>
+      {field.type === 'file' ? <div className="file-picker"><input id={id} name={field.key} type="file" accept={field.accept} required={field.required} disabled={busy || submitting || quoting || readingFile} aria-describedby={`${id}-hint`} onChange={event => void chooseFile(event.target.files?.[0])} /><small>{readingFile ? 'Reading your file...' : values.fileName ? `${values.fileName} is ready to send.` : 'Choose a file from your device'}</small></div>
         : field.type === 'textarea' ? <textarea {...props} rows={3} maxLength={field.maxLength} placeholder={field.placeholder} onChange={event => change(field.key, event.target.value)} />
         : field.type === 'select' ? <select {...props} onChange={event => {
           const option = field.options?.find(item => String(item.value) === event.target.value);
           change(field.key, option?.value ?? event.target.value);
         }}>{field.options?.map(option => <option value={option.value} key={option.value}>{option.label}</option>)}</select>
-          : <input {...props} type={field.type === 'number' ? 'number' : field.type === 'text' ? 'text' : 'url'} min={field.min} max={field.max} step={field.type === 'number' ? 1 : undefined} maxLength={field.maxLength} placeholder={field.placeholder} onChange={event => change(field.key, field.type === 'number' && event.target.value !== '' ? Number(event.target.value) : event.target.value)} />}
+          : <input {...props} type={field.type === 'number' ? 'number' : field.type === 'text' ? 'text' : 'url'} min={field.min} max={field.max} step={field.type === 'number' ? field.step ?? 1 : undefined} maxLength={field.maxLength} placeholder={field.placeholder} onChange={event => change(field.key, field.type === 'number' && event.target.value !== '' ? Number(event.target.value) : event.target.value)} />}
       {field.description && <p id={`${id}-hint`} className="field-hint">{field.description}</p>}
     </div>;
   }
@@ -123,7 +124,7 @@ export default function TaskPanel({ mode = "village", residentState, selectedUid
     {!isScan && tab === 'residents' && <section id="residents-view" role="tabpanel" aria-labelledby="residents-tab"><Residents key={`${provider.id}:${selectedUid}`} provider={provider} state={residentState} selectedUid={selectedUid} onRefresh={onRefreshResidents} /></section>}
     <section id="quest-view" role={!isScan ? 'tabpanel' : undefined} aria-labelledby={!isScan ? 'quest-tab' : undefined} hidden={!isScan && tab !== 'quest'}>
     {provider.taskKind ? <form id="house-quest" className="quest-form" onSubmit={submit}>
-      <div className="section-caption"><h3>{isScan ? 'Explore the registry' : provider.taskKind === 'storage' ? 'What shall we keep?' : provider.category === 'Search' || provider.id === 'chronoseek' ? 'What shall we find?' : 'What shall we make?'}</h3></div>
+      <div className="section-caption"><h3>{isScan ? 'Explore the registry' : provider.taskKind === 'weather' ? 'Where shall we look?' : provider.taskKind === 'detection' ? 'What shall we check?' : provider.taskKind === 'memory' || provider.taskKind === 'storage' ? 'What shall we keep?' : provider.category === 'Search' || provider.id === 'chronoseek' ? 'What shall we find?' : 'What shall we make?'}</h3></div>
       {provider.exampleInput && !isScan && <button type="button" className="text-button" disabled={busy || quoting} onClick={() => {
         const { providerId: _provider, ...example } = provider.exampleInput!;
         void _provider; setValues(previous => ({ ...previous, ...example })); setQuote(null);
