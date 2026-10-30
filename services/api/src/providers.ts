@@ -4,6 +4,7 @@ import type { JobInput, JobResult } from '@subswarm/shared';
 import type { Config } from './config.js';
 import { ApiFailure } from './errors.js';
 import type { NetworkReader } from './network.js';
+import { createDittoMemory } from './ditto.js';
 import { createAttelierExecutor } from './attelier.js';
 import { createHippiusStorage } from './hippius.js';
 import { create404Executor } from './gen404.js';
@@ -89,10 +90,33 @@ function parseResponse<T>(schema: z.ZodType<T>, raw: unknown): T {
 }
 
 export function createExecutor(config: Config, network: NetworkReader, fetcher: typeof fetch = fetch): JobExecutor {
+  const memory = createDittoMemory(config);
   const executeAttelier = createAttelierExecutor(config, fetcher);
   const storage = createHippiusStorage(config);
   const execute404 = create404Executor(config, fetcher);
   return async (input, context) => {
+    if (input.providerId === 'ditto') return memory.execute(input, context);
+    if (input.providerId === 'bitmind' && config.bitmindApiKey) {
+      const bytes = Buffer.from(input.fileBase64!, 'base64');
+      const mime = bytes[0] === 137 ? 'image/png' : 'image/jpeg';
+      const data = parseResponse(z.object({ isAI: z.boolean(), confidence: z.number().finite().min(0).max(1) }), await requestJson('https://api.bitmind.ai/detect-image', {
+        method: 'POST', headers: { Authorization: `Bearer ${config.bitmindApiKey}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: `data:${mime};base64,${input.fileBase64}` }),
+      }, fetcher));
+      return { title: 'BitMind image assessment', text: `${input.fileName}: ${data.isAI ? 'likely AI-generated' : 'likely not AI-generated'}. Model confidence: ${(data.confidence * 100).toFixed(1)}%. This is an estimate, not proof of authenticity.`, blocks: [{ type: 'detection', fileName: input.fileName!, ...data }] };
+    }
+    if (input.providerId === 'zeus' && config.zeusApiKey) {
+      const url = new URL('/v1/forecast/point', config.zeusApiKey.startsWith('free_') ? 'https://free-api.zeussubnet.com' : 'https://api.zeussubnet.com');
+      url.search = new URLSearchParams({ lat: String(input.latitude), lon: String(input.longitude), forecast_hours: String(input.forecastHours ?? 6), hourly: '2t' }).toString();
+      const data = parseResponse(z.object({
+        latitude: z.number().finite(), longitude: z.number().finite(), reference_time: z.iso.datetime(),
+        hourly_units: z.object({ '2t': z.literal('K') }), hourly: z.object({ time: z.array(z.iso.datetime()).min(1).max(24), '2t': z.array(z.number().finite().min(100).max(400)).min(1).max(24) }),
+        hourly_provenance: z.object({ '2t': z.string().max(2000).optional() }).optional(),
+      }), await requestJson(url.toString(), { headers: { 'X-API-Key': config.zeusApiKey, Accept: 'application/json' } }, fetcher));
+      if (data.hourly.time.length !== data.hourly['2t'].length || data.hourly.time.length > (input.forecastHours ?? 6)) throw new ApiFailure('invalid_provider_response', 'Zeus returned inconsistent forecast steps.', 502);
+      const celsius = data.hourly['2t'].map(k => Math.round((k - 273.15) * 10) / 10);
+      return { title: 'Zeus temperature forecast', text: `Forecast for ${data.latitude}, ${data.longitude}. Reference: ${data.reference_time}.\n${data.hourly.time.map((time, i) => `${time}: ${celsius[i]} C`).join('\n')}`, blocks: [{ type: 'weather', latitude: data.latitude, longitude: data.longitude, referenceTime: data.reference_time, times: data.hourly.time, celsius, provenance: data.hourly_provenance?.['2t'] }] };
+    }
     if (input.providerId === 'attelier') return executeAttelier(input, context);
     if (input.providerId === 'hippius') return storage.execute(input, context);
     if (input.providerId === '404gen') return execute404(input, context);

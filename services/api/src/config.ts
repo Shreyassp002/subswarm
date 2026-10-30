@@ -4,6 +4,11 @@ import { accountId, rao } from './payments.js';
 import type { PaymentConfig } from './payments.js';
 
 export interface Config {
+  publishedProviders?: string[];
+  bitmindApiKey?: string;
+  zeusApiKey?: string;
+  dittoApiKey?: string;
+  dittoSpace?: string;
   payments?: PaymentConfig;
   port: number;
   webOrigin: string;
@@ -44,7 +49,7 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): Config {
     throw new Error('CHRONOSEEK_URL must use http or https.');
   }
   const pricesRao: Record<string, string> = {};
-  for (const id of ['saygm', 'chutes', 'desearch', 'chronoseek', '404gen', 'attelier', 'hippius']) {
+  for (const id of ['saygm', 'chutes', 'desearch', 'chronoseek', '404gen', 'attelier', 'hippius', 'bitmind', 'zeus', 'ditto']) {
     const price = env[`TAO_PRICE_${id.toUpperCase()}_RAO`]?.trim();
     if (price) {
       if (rao(price) === 0n) throw new Error('Paid request prices must be greater than zero.');
@@ -71,6 +76,11 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): Config {
   if (receiver) accountId(receiver);
   if (env.TAO_PAYMENTS_ENABLED && !['true', 'false'].includes(env.TAO_PAYMENTS_ENABLED)) throw new Error('TAO_PAYMENTS_ENABLED must be true or false.');
   return {
+    publishedProviders: (env.PUBLISHED_PROVIDERS ?? 'network,saygm,desearch,bitmind,zeus,ditto').split(',').map(value => value.trim()).filter(Boolean),
+    bitmindApiKey: env.BITMIND_API_KEY?.trim() || undefined,
+    zeusApiKey: env.ZEUS_API_KEY?.trim() || undefined,
+    dittoApiKey: env.DITTO_MCP_API_KEY?.trim() || undefined,
+    dittoSpace: env.DITTO_SPACE?.trim() || undefined,
     payments: { enabled: env.TAO_PAYMENTS_ENABLED === 'true', receiver, pricesRao,
       demoCredit: { amountRao: demoCreditRao, maxDailyWallets: positiveInteger(env.DEMO_MAX_DAILY_WALLETS, 20, 1000) },
       startBlock: env.TAO_DEPOSIT_START_BLOCK ? positiveInteger(env.TAO_DEPOSIT_START_BLOCK, 1, 4_294_967_295) : undefined },

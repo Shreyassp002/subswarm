@@ -14,6 +14,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "3.1159.0",
     "@hono/node-server": "2.1.5",
+    "@modelcontextprotocol/sdk": "1.32.2",
     "@polkadot/api": "17.0.2",
     "@polkadot/util-crypto": "14.0.3",
     "@subswarm/shared": "1.0.0",

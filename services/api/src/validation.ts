@@ -12,6 +12,16 @@ const publicVideoUrl = z.string().trim().min(1).max(2048).url().refine((value) =
 const prompt = z.string().trim().min(1).max(4000);
 const chatFields = { prompt, maxTokens: z.number().int().min(1).max(1200).optional() };
 const inputSchema = z.discriminatedUnion('providerId', [
+  z.object({ providerId: z.literal('zeus'), latitude: z.number().finite().min(-90).max(90), longitude: z.number().finite().min(-180).max(180), forecastHours: z.number().int().min(1).max(24).default(6) }).strict(),
+  z.object({ providerId: z.literal('ditto'), prompt }).strict(),
+  z.object({ providerId: z.literal('bitmind'), fileName: z.string().trim().min(1).max(120).regex(/^[a-zA-Z0-9][a-zA-Z0-9._ -]*$/),
+    fileBase64: z.string().min(4).max(349528).regex(/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/).refine(value => {
+      const bytes = Buffer.from(value, 'base64');
+      const png = bytes.subarray(0, 8).equals(Buffer.from([137,80,78,71,13,10,26,10]));
+      const jpeg = bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255;
+      return bytes.length > 8 && bytes.length <= 256 * 1024 && bytes.toString('base64') === value && (png || jpeg);
+    }, 'Upload a PNG or JPEG image no larger than 256 KiB.'),
+  }).strict(),
   z.object({ providerId: z.literal('attelier'), prompt }).strict(),
   z.object({ providerId: z.literal('hippius'),
     fileName: z.string().trim().min(1).max(120).regex(/^[a-zA-Z0-9][a-zA-Z0-9._ -]*$/),

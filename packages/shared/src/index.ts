@@ -1,15 +1,17 @@
-export type ProviderId = 'network' | 'saygm' | 'desearch' | 'chronoseek' | 'chutes' | '404gen' | 'attelier' | 'everyframe' | 'hippius' | 'ridges';
-export type TaskKind = 'network-scan' | 'text' | 'search' | 'video-search' | '3d' | 'media' | 'storage';
+export type ProviderId = 'network' | 'saygm' | 'desearch' | 'chronoseek' | 'chutes' | '404gen' | 'attelier' | 'everyframe' | 'hippius' | 'ridges' | 'bitmind' | 'zeus' | 'ditto';
+export type TaskKind = 'network-scan' | 'text' | 'search' | 'video-search' | '3d' | 'media' | 'storage' | 'detection' | 'weather' | 'memory';
 export type JobStatus = 'queued' | 'running' | 'completed' | 'failed';
 
 export interface ProviderInputField {
-  key: 'prompt' | 'videoUrl' | 'netuid' | 'maxTokens' | 'topK' | 'start' | 'model' | 'inputImageUrl' | 'fileName' | 'fileBase64';
+  key: 'prompt' | 'videoUrl' | 'netuid' | 'maxTokens' | 'topK' | 'start' | 'model' | 'inputImageUrl' | 'fileName' | 'fileBase64' | 'latitude' | 'longitude' | 'forecastHours';
   type: 'textarea' | 'url' | 'number' | 'select' | 'text' | 'file';
   label: string;
   description?: string;
   required: boolean;
   defaultValue?: string | number;
   placeholder?: string;
+  accept?: string;
+  step?: number;
   min?: number;
   max?: number;
   maxLength?: number;
@@ -64,11 +66,18 @@ export interface JobInput {
   start?: number;
   model?: '404-3dgs' | '404-mesh';
   inputImageUrl?: string;
+  latitude?: number;
+  longitude?: number;
+  forecastHours?: number;
   fileName?: string;
   fileBase64?: string;
 }
 
 export type ResultBlock =
+  | { type: 'weather'; latitude: number; longitude: number; referenceTime: string; times: string[]; celsius: number[]; provenance?: string }
+  | { type: 'detection'; fileName: string; isAI: boolean; confidence: number }
+  | { type: 'memory'; jobId: string; text: string }
+
   | { type: 'stored-file'; name: string; bytes: number; sha256: string; jobId: string; expiresAt?: string }
   | { type: 'media'; items: { title: string; url: string; kind: 'image' | 'video' | 'audio'; mimeType: string }[] }
   | { type: 'text'; text: string; model?: string }
@@ -78,6 +87,8 @@ export type ResultBlock =
   | { type: 'files'; items: { title: string; url: string; format: 'spz' | 'glb' | 'file' }[] };
 
 export interface JobResult {
+  memoryId?: string;
+  memorySpace?: string;
   storageSha256?: string;
   storageVersionId?: string;
   storageExpiresAt?: string;
@@ -103,6 +114,7 @@ export interface Job {
   providerTaskId?: string;
   error: string | null;
   providerQuoteId?: string;
+  memoryDeletedAt?: string;
   storageDeletedAt?: string;
 }
 

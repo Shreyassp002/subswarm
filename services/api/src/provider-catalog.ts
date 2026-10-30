@@ -45,6 +45,32 @@ export function providerCatalog(config: Config, networkAvailable: boolean): Prov
       reason: config.desearchApiKey ? undefined : 'A server-side Desearch API key with available provider credit is required.',
     },
     {
+      id: 'bitmind', name: 'BitMind', netuid: 34, network: 'mainnet', category: 'Image checks',
+      description: 'Check an image for signs of AI generation.', status: config.bitmindApiKey ? 'ready' : 'needs_key', taskKind: 'detection', attribution: 'none',
+      website: 'https://bitmind.ai', docsUrl: 'https://docs.bitmind.ai/',
+      inputs: [{ key: 'fileBase64', type: 'file', label: 'Image to check', accept: 'image/png,image/jpeg', required: true, description: 'PNG or JPEG, up to 256 KiB. The image is sent to BitMind for analysis.' }],
+      inputDescription: 'Upload a PNG or JPEG image.', outputDescription: 'An AI-generation assessment and confidence score. This is a model estimate, not proof of authenticity.',
+    },
+    {
+      id: 'zeus', name: 'Zeus', netuid: 18, network: 'mainnet', category: 'Weather',
+      description: 'Explore temperature forecasts for a location.', status: config.zeusApiKey ? 'ready' : 'needs_key', taskKind: 'weather', attribution: 'none',
+      website: 'https://zeussubnet.com', docsUrl: 'https://docs.zeussubnet.com/docs/forecast/point',
+      inputs: [
+        { key: 'latitude', type: 'number', label: 'Latitude', required: true, min: -90, max: 90, step: 0.01, defaultValue: 19.00 },
+        { key: 'longitude', type: 'number', label: 'Longitude', required: true, min: -180, max: 180, step: 0.01, defaultValue: 72.75 },
+        { key: 'forecastHours', type: 'number', label: 'Hourly steps', description: 'Up to 24 hours from the provider forecast reference time.', required: true, min: 1, max: 24, defaultValue: 6 },
+      ], inputDescription: 'Coordinates and number of hourly forecast steps.', outputDescription: 'Temperature in Celsius with the forecast reference time, hourly timestamps and provider source evidence.',
+      exampleInput: { providerId: 'zeus', latitude: 19, longitude: 72.75, forecastHours: 6 },
+    },
+    {
+      id: 'ditto', name: 'Ditto', netuid: 118, network: 'mainnet', category: 'Memory',
+      description: 'Save a note and retrieve it later from your journal.', status: config.dittoApiKey && config.dittoSpace ? 'ready' : 'needs_key', taskKind: 'memory', attribution: 'none',
+      website: 'https://heyditto.ai', docsUrl: 'https://heyditto.ai/docs/mcp-server',
+      inputs: [{ key: 'prompt', type: 'textarea', label: 'Note to remember', required: true, maxLength: 4000, placeholder: 'Keep the next village meetup focused on building useful AI applications.', description: 'Stored in SubSwarm-managed Ditto storage. Only your workspace can retrieve this note through SubSwarm. Do not include secrets.' }],
+      inputDescription: 'A note of up to 4,000 characters.', outputDescription: 'A saved note with retrieve and delete controls in your journal.',
+      exampleInput: { providerId: 'ditto', prompt: 'For the next project review, bring a working request and its saved result.' },
+    },
+    {
       id: 'chronoseek', name: 'ChronoSeek', netuid: 298, network: 'testnet', category: 'Video',
       description: 'Find the moments in an existing video that match a description.',
       status: config.chronoseekUrl ? 'ready' : 'unavailable', taskKind: 'video-search', attribution: 'query-uids',
@@ -123,4 +149,9 @@ export function providerCatalog(config: Config, networkAvailable: boolean): Prov
   return providers.map(provider => config.payments?.enabled && provider.status === 'ready' && provider.id !== 'network' && !config.payments.pricesRao[provider.id]
     ? { ...provider, status: 'unavailable', reason: 'Requests are not enabled for this service yet. No payment will be taken.' }
     : provider);
+}
+
+export function publishedProviders(config: Config, networkAvailable: boolean): Provider[] {
+  return providerCatalog(config, networkAvailable).filter(provider =>
+    config.publishedProviders?.includes(provider.id) && provider.status === 'ready');
 }

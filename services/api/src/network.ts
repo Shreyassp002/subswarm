@@ -8,7 +8,7 @@ import { ApiFailure } from './errors.js';
 
 export const allowedNetworks: Record<NetworkSnapshot['network'], readonly number[]> = {
   testnet: [298, 482],
-  mainnet: [28, 22, 64, 17, 126, 117, 75, 62],
+  mainnet: [28, 22, 64, 17, 126, 117, 75, 62, 34, 18, 118, 13],
 };
 
 const metagraphSchema = z.object({

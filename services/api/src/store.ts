@@ -243,6 +243,28 @@ export class Store {
     return rows.map(row => ({ sessionId: row.session_id, job: JSON.parse(row.data) as Job }));
   }
 
+  markMemoryDeleted(sessionId: string, id: string): Job {
+    return this.db.transaction(() => {
+      const job = this.findJob(sessionId, id);
+      if (!job || job.providerId !== 'ditto' || job.status !== 'completed') throw new ApiFailure('memory_not_found', 'This note was not found in your workspace.', 404);
+      job.memoryDeletedAt ??= new Date().toISOString();
+      job.updatedAt = job.memoryDeletedAt;
+      delete job.input.prompt;
+      if (job.result) {
+        job.result.text = 'This note has been deleted.';
+        job.result.blocks = [{ type: 'text', text: job.result.text }];
+      }
+      const row = this.db.prepare('SELECT data FROM artifacts WHERE job_id = ? AND session_id = ?').get(id, sessionId) as JobRow | undefined;
+      if (row) {
+        const artifact = JSON.parse(row.data) as Artifact;
+        artifact.content = 'This note has been deleted.';
+        this.db.prepare('UPDATE artifacts SET data = ? WHERE job_id = ? AND session_id = ?').run(JSON.stringify(artifact), id, sessionId);
+      }
+      this.db.prepare('UPDATE jobs SET data = ? WHERE id = ?').run(JSON.stringify(job), id);
+      return job;
+    }).immediate();
+  }
+
   markStorageDeleted(sessionId: string, id: string): Job {
     return this.db.transaction(() => {
       const job = this.findJob(sessionId, id);

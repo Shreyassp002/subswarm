@@ -12,7 +12,9 @@ import { readConfig } from './config.js';
 import { ApiFailure } from './errors.js';
 import { assertKnownNetwork, BtcliNetworkReader } from './network.js';
 import type { NetworkReader } from './network.js';
-import { createExecutor, download404Result, providerCatalog } from './providers.js';
+import { createExecutor, download404Result } from './providers.js';
+import { providerCatalog, publishedProviders } from './provider-catalog.js';
+import { createDittoMemory } from './ditto.js';
 import type { JobExecutor } from './providers.js';
 import { Store } from './store.js';
 import { parseJobInput } from './validation.js';
@@ -28,6 +30,7 @@ interface AppOptions {
   deposits?: DepositReader;
   downloadModel?: typeof download404Result;
   downloadMedia?: typeof downloadAttelierResult;
+  memory?: ReturnType<typeof createDittoMemory>;
   storage?: ReturnType<typeof createHippiusStorage>;
 }
 
@@ -38,6 +41,7 @@ export function createApp(options: AppOptions = {}) {
   const execute = options.execute ?? createExecutor(config, network);
   const downloadMedia = options.downloadMedia ?? downloadAttelierResult;
   const storage = options.storage ?? createHippiusStorage(config);
+  const memory = options.memory ?? createDittoMemory(config);
   const cleanupStorage = createStorageCleanup(store, storage);
   const downloadModel = options.downloadModel ?? download404Result;
   const deposits = options.deposits ?? new TestnetDepositReader();
@@ -66,7 +70,7 @@ export function createApp(options: AppOptions = {}) {
     setCookie(c, cookieName, token, { httpOnly: true, secure: config.webOrigin.startsWith('https:'), sameSite: 'Strict', path: '/v1', maxAge: 30 * 24 * 60 * 60 });
     return c.json({ session });
   });
-  app.get('/v1/providers', (c) => c.json({ providers: providerCatalog(config, network.available) }));
+  app.get('/v1/providers', (c) => c.json({ providers: publishedProviders(config, network.available) }));
   app.use('/v1/*', async (c, next) => {
     const session = store.findSession(getCookie(c, cookieName));
     if (!session) throw new ApiFailure('session_required', 'Open a workspace session before continuing.', 401);
@@ -122,8 +126,8 @@ export function createApp(options: AppOptions = {}) {
   app.post('/v1/quotes', async (c) => {
     requirePayments();
     const input = parseJobInput(await parseBody(c));
-    const provider = providerCatalog(config, network.available).find((item) => item.id === input.providerId)!;
-    if (provider.status !== 'ready' || !provider.taskKind) throw new ApiFailure('provider_unavailable', provider.reason ?? 'This provider is not available.', 503);
+    const provider = publishedProviders(config, network.available).find((item) => item.id === input.providerId)!;
+    if (!provider || provider.status !== 'ready' || !provider.taskKind) throw new ApiFailure('provider_unavailable', provider?.reason ?? 'This provider is not available.', 503);
     const price = payment.pricesRao[input.providerId];
     if (!price) throw new ApiFailure('price_unavailable', 'No paid request price is configured for this provider.', 503);
     store.consumeRequest(c.get('session').id, config.maxDailyRequests);
@@ -183,6 +187,28 @@ export function createApp(options: AppOptions = {}) {
     }
     return c.json({ job: store.markStorageDeleted(sessionId, job.id) });
   });
+  const ownedMemory = (sessionId: string, id: string) => {
+    const job = store.findJob(sessionId, id);
+    if (!job || job.providerId !== 'ditto' || job.status !== 'completed' || !job.result?.memoryId || !job.result.memorySpace) throw new ApiFailure('memory_not_found', 'This note was not found in your workspace.', 404);
+    return job;
+  };
+  app.get('/v1/jobs/:id/memory', async c => {
+    const job = ownedMemory(c.get('session').id, c.req.param('id'));
+    if (job.memoryDeletedAt) throw new ApiFailure('memory_deleted', 'This note has been deleted.', 410);
+    store.consumeRequest(c.get('session').id, config.maxDailyRequests);
+    const text = await memory.retrieve(job.result!.memoryId!, job.result!.memorySpace!);
+    return c.json({ text });
+  });
+  app.post('/v1/jobs/:id/memory/delete', async c => {
+    validate(z.object({}).strict(), await parseBody(c));
+    const sessionId = c.get('session').id;
+    const job = ownedMemory(sessionId, c.req.param('id'));
+    if (!job.memoryDeletedAt) {
+      store.consumeRequest(sessionId, config.maxDailyRequests);
+      await memory.remove(job.result!.memoryId!, job.result!.memorySpace!);
+    }
+    return c.json({ job: store.markMemoryDeleted(sessionId, job.id) });
+  });
   app.post('/v1/jobs', async (c) => {
     if (!c.req.header('Content-Type')?.toLowerCase().startsWith('application/json')) throw new ApiFailure('invalid_content_type', 'Use an application/json request body.', 400);
     let raw: unknown;
@@ -198,8 +224,8 @@ export function createApp(options: AppOptions = {}) {
       raw = rest;
     }
     const input = parseJobInput(raw);
-    const provider = providerCatalog(config, network.available).find((item) => item.id === input.providerId)!;
-    if (provider.status !== 'ready' || !provider.taskKind) throw new ApiFailure('provider_unavailable', provider.reason ?? 'This provider is not available.', 503);
+    const provider = publishedProviders(config, network.available).find((item) => item.id === input.providerId)!;
+    if (!provider || provider.status !== 'ready' || !provider.taskKind) throw new ApiFailure('provider_unavailable', provider?.reason ?? 'This provider is not available.', 503);
     if (input.providerId !== 'network') {
       requirePayments();
       if (!payment.pricesRao[input.providerId]) throw new ApiFailure('price_unavailable', 'No paid request price is configured for this provider.', 503);

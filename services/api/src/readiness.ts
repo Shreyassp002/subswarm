@@ -4,6 +4,8 @@ import { paymentSettings } from './payments.js';
 
 export function configurationReport(config: Config, registryAvailable: boolean) {
   const requirements: Record<string, [string, unknown][]> = {
+    bitmind: [['BITMIND_API_KEY', config.bitmindApiKey]], zeus: [['ZEUS_API_KEY', config.zeusApiKey]],
+    ditto: [['DITTO_MCP_API_KEY', config.dittoApiKey], ['DITTO_SPACE', config.dittoSpace]],
     saygm: [['SAYGM_API_KEY', config.saygmApiKey]], chutes: [['CHUTES_API_KEY', config.chutesApiKey]],
     desearch: [['DESEARCH_API_KEY', config.desearchApiKey]], chronoseek: [['CHRONOSEEK_URL', config.chronoseekUrl]],
     '404gen': [['GEN404_API_KEY', config.gen404ApiKey]], attelier: [['ATTELIER_API_KEY', config.attelierApiKey], ['ATTELIER_MODEL', config.attelierModel]],
