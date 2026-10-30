@@ -2,6 +2,7 @@ export interface WalletState {
   address: string | null;
   availableRao: string;
   reservedRao: string;
+  demoCreditClaimed?: boolean;
 }
 
 export interface PaymentSettings {

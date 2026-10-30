@@ -279,7 +279,7 @@ export class Store {
     const account = this.walletAccount(sessionId);
     if (!account) return { address: null, availableRao: '0', reservedRao: '0' };
     const row = this.db.prepare('SELECT available, reserved FROM payment_accounts WHERE account = ?').get(account) as { available: string; reserved: string };
-    return { address: walletAddress(account), availableRao: row.available, reservedRao: row.reserved };
+    return { address: walletAddress(account), availableRao: row.available, reservedRao: row.reserved, demoCreditClaimed: Boolean(this.db.prepare('SELECT 1 FROM demo_credits WHERE account = ?').get(account)) };
   }
 
   createWalletChallenge(sessionId: string, address: string, origin: string) {
@@ -299,23 +299,31 @@ export class Store {
     return row;
   }
 
-  bindWallet(sessionId: string, challengeId: string, demoCredit?: { amountRao: string; maxDailyWallets: number }): WalletState {
+  bindWallet(sessionId: string, challengeId: string): WalletState {
     return this.db.transaction(() => {
       const { account } = this.walletChallenge(sessionId, challengeId);
       this.db.prepare('DELETE FROM wallet_challenges WHERE session_id = ?').run(sessionId);
       this.db.prepare("INSERT OR IGNORE INTO payment_accounts (account, available, reserved) VALUES (?, '0', '0')").run(account);
       this.db.prepare('INSERT INTO wallet_bindings (session_id, account, expires_at) VALUES (?, ?, ?) ON CONFLICT(session_id) DO UPDATE SET account=excluded.account, expires_at=excluded.expires_at')
         .run(sessionId, account, Date.now() + 24 * 60 * 60_000);
-      if (demoCredit && rao(demoCredit.amountRao) > 0n && !this.db.prepare('SELECT 1 FROM demo_credits WHERE account = ?').get(account)) {
-        const now = new Date().toISOString();
-        const { count } = this.db.prepare('SELECT count(*) AS count FROM demo_credits WHERE created_at >= ?').get(`${now.slice(0, 10)}T00:00:00.000Z`) as { count: number };
-        const balance = this.walletState(sessionId);
-        const amount = rao(demoCredit.amountRao);
-        if (count < demoCredit.maxDailyWallets && rao(balance.availableRao) + rao(balance.reservedRao) + amount <= MAX_RAO) {
-          this.db.prepare('INSERT INTO demo_credits (account, amount, created_at) VALUES (?, ?, ?)').run(account, amount.toString(), now);
-          this.db.prepare('UPDATE payment_accounts SET available = ? WHERE account = ?').run((rao(balance.availableRao) + amount).toString(), account);
-        }
-      }
+      return this.walletState(sessionId);
+    }).immediate();
+  }
+
+  claimDemoCredit(sessionId: string, policy?: { amountRao: string; maxDailyWallets: number }): WalletState {
+    return this.db.transaction(() => {
+      const account = this.walletAccount(sessionId);
+      if (!account) throw new ApiFailure('wallet_required', 'Connect and verify your wallet first.', 401);
+      if (!policy || rao(policy.amountRao) === 0n) throw new ApiFailure('demo_unavailable', 'Demo claims are not available right now.', 503);
+      if (this.db.prepare('SELECT 1 FROM demo_credits WHERE account = ?').get(account)) return this.walletState(sessionId);
+      const now = new Date().toISOString();
+      const { count } = this.db.prepare('SELECT count(*) AS count FROM demo_credits WHERE created_at >= ?').get(`${now.slice(0, 10)}T00:00:00.000Z`) as { count: number };
+      if (count >= policy.maxDailyWallets) throw new ApiFailure('demo_daily_limit', "Today's demo allocation has been claimed. Try again after 00:00 UTC.", 429);
+      const balance = this.walletState(sessionId);
+      const amount = rao(policy.amountRao);
+      if (rao(balance.availableRao) + rao(balance.reservedRao) + amount > MAX_RAO) throw new ApiFailure('balance_limit', 'This claim would exceed the balance limit.', 422);
+      this.db.prepare('INSERT INTO demo_credits (account, amount, created_at) VALUES (?, ?, ?)').run(account, amount.toString(), now);
+      this.db.prepare('UPDATE payment_accounts SET available = ? WHERE account = ?').run((rao(balance.availableRao) + amount).toString(), account);
       return this.walletState(sessionId);
     }).immediate();
   }

@@ -125,10 +125,10 @@ passed live execution checks. No mainnet transactions are enabled.
 
 ## Sponsored first request
 
-The public demo grants 1,000 rao of internal request credit once per verified
-wallet, enough for one completed SayGM or Desearch request at the current demo
-price. No on-chain TAO or network fee is needed for that first request. The
-wallet must sign its login challenge; a supplied address alone earns nothing.
+After connecting, users click `Claim free request` to receive 1,000 rao of internal
+request credit once per verified wallet, enough for one completed SayGM or Desearch
+request at the current demo price. No on-chain TAO or network fee is needed for
+that first request. Connecting never grants credit automatically. The wallet must sign its login challenge; a supplied address alone earns nothing.
 Credits appear as `Sponsored demo credit`, separately from real deposits.
 Reconnects, new browser sessions, alternate SS58 encodings and restarts do not
 reissue the grant. Failed requests release the reservation for another attempt.
@@ -138,3 +138,6 @@ allocation. Zero credit disables it. At most 20 wallets are credited per UTC day
 the separate shared provider cap remains 20 attempts per UTC day. This is a
 wallet-level demo allowance, not proof that wallets belong to distinct people.
 After the credit is spent, users may add a small prepaid test-TAO balance.
+
+Claims use authenticated `POST /v1/wallet/demo-credit` with an empty JSON body.
+Repeated claims return the current balance without issuing credit again.
