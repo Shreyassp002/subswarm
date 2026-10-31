@@ -134,7 +134,7 @@ export class WorldScene extends Phaser.Scene implements WorldController {
   private createSign(building: VillageBuilding) {
     const plate = this.add.graphics()
     const name = this.add.text(0, -8, building.name, { fontFamily: 'monospace', fontSize: '14px', fontStyle: 'bold', color: '#fff0c7', stroke: '#35261c', strokeThickness: 2 }).setOrigin(0.5)
-    const ability = this.add.text(0, 11, building.ability, { fontFamily: 'monospace', fontSize: '10px', color: '#e6c79a' }).setOrigin(0.5)
+    const ability = this.add.text(0, 11, building.comingSoon ? 'COMING SOON' : building.ability, { fontFamily: 'monospace', fontSize: '10px', color: '#e6c79a' }).setOrigin(0.5)
     const status = this.add.text(0, -37, 'COURIERS AT WORK', { fontFamily: 'monospace', fontSize: '9px', color: '#fff0c7', backgroundColor: '#34473d', padding: { x: 6, y: 4 } }).setOrigin(0.5).setVisible(false)
     const container = this.add.container(building.sign.x, building.sign.y, [plate, name, ability, status]).setDepth(2500).setScale(WORLD_SCALE)
     container.setSize(SIGN_WIDTH, 46).setInteractive({ useHandCursor: true })
@@ -183,7 +183,7 @@ export class WorldScene extends Phaser.Scene implements WorldController {
 
   private syncParticipants(residents: Partial<Record<ProviderId, NetworkSnapshot>>) {
     for (const building of BUILDINGS) {
-      if (building.id === 'network') continue
+      if (building.id === 'network' || building.comingSoon) continue
       const snapshot = residents[building.id]
       if (snapshot === this.lastResidents[building.id]) continue
       for (const walker of this.participantWalkers.get(building.id) ?? []) { walker.sprite.destroy(); walker.shadow.destroy(); walker.label?.destroy() }
