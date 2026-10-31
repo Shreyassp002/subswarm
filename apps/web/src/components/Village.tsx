@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BookOpen, ChevronRight, CircleAlert, Compass, Grid2X2, HelpCircle, LoaderCircle, Map, RefreshCw, Wallet, X } from "lucide-react";
 import type { ProviderId } from "@subswarm/shared";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -26,6 +26,12 @@ export default function Village() {
   const { selectedUid, walletOpen, setWalletOpen, wallet, payments, session, providers, jobs, artifacts, snapshot, chainUnavailable, selectedProvider, setSelectedProvider, directoryOpen, setDirectoryOpen, journalOpen, setJournalOpen, journalJobId, helpOpen, setHelpOpen, currentJob, connection, error, taskError, submitting, setReload, residents, refreshResidents, residentSnapshots, refreshWallet, selectProvider, selectResident, openWallet, openJournal, sendQuest, selected, selectedJob, busy } = useWorkspace();
   const [search, setSearch] = useState("");
   const [previewHouse, setPreviewHouse] = useState<"kova" | null>(null);
+  useEffect(() => {
+    if (!previewHouse) return;
+    const close = (event: KeyboardEvent) => { if (event.key === "Escape") setPreviewHouse(null); };
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
+  }, [previewHouse]);
   const upcoming = UPCOMING_BUILDINGS.find(building => building.id === (previewHouse ?? selectedProvider));
   function selectHouse(id: VillageBuildingId) {
     setPreviewHouse(null);
@@ -39,7 +45,7 @@ export default function Village() {
   function closePreview() { setPreviewHouse(null); setSelectedProvider(null); }
   const upcomingMatches = UPCOMING_BUILDINGS.filter(building => `${building.name} ${building.ability} ${building.comingSoon?.netuid ?? ""}`.toLowerCase().includes(search.trim().toLowerCase()));
   return (
-    <div className="village-app" onKeyDownCapture={event => { if (event.key === "Escape") setPreviewHouse(null); }}>
+    <div className="village-app">
       <a className="skip-link" href="#world-controls">Skip to world controls</a>
       <header className="topbar">
         <Link className="brand" href="/" aria-label="Subswarm village home" title={session ? `Exploring as ${session.name}` : "Subswarm"}>subswarm<span>.</span></Link>
