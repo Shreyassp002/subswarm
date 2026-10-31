@@ -1,5 +1,5 @@
 <p align="center">
-  <img src=".github/assets/subswarm.svg" alt="SubSwarm" width="960" />
+  <img src=".github/assets/subswarm.svg" alt="SubSwarm" width="860" />
 </p>
 
 <p align="center">
