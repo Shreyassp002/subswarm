@@ -3,10 +3,11 @@
 import { useEffect, useRef, useState } from 'react'
 import type { NetworkSnapshot, ProviderId } from '@subswarm/shared'
 import type { WorldController, WorldState } from '../game/types'
+import type { VillageBuildingId } from '../game/village'
 
 interface WorldCanvasProps {
-  selectedProvider: ProviderId | null
-  onSelectProvider: (id: ProviderId) => void
+  selectedProvider: VillageBuildingId | null
+  onSelectProvider: (id: VillageBuildingId) => void
   residents: Partial<Record<ProviderId, NetworkSnapshot>>
   onSelectResident: (id: ProviderId, uid: number) => void
   busyProvider?: ProviderId | null

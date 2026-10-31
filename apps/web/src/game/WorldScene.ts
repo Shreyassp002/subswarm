@@ -2,7 +2,7 @@ import * as Phaser from 'phaser'
 import type { NetworkSnapshot, ProviderId } from '@subswarm/shared'
 import { findPath, type Point } from './navigation'
 import type { WorldBridge, WorldController } from './types'
-import { BUILDINGS, COLLISIONS, PLAYER_START, PLAYER_FOOTPRINT, WORLD_HEIGHT, WORLD_WIDTH, WORLD_SCALE, worldPoint, type VillageBuilding } from './village'
+import { BUILDINGS, COLLISIONS, PLAYER_START, PLAYER_FOOTPRINT, WORLD_HEIGHT, WORLD_WIDTH, WORLD_SCALE, worldPoint, type VillageBuilding, type VillageBuildingId } from './village'
 
 const CHARACTERS = ['traveler', 'courier', 'resident'] as const
 const DIRECTIONS = { down: 0, up: 1, left: 2, right: 3 } as const
@@ -58,7 +58,7 @@ export class WorldScene extends Phaser.Scene implements WorldController {
   private couriers: Walker[] = []
   private playerDirection: Direction = 'down'
   private lastResidents: Partial<Record<ProviderId, NetworkSnapshot>> = {}
-  private previousSelection: ProviderId | null | undefined
+  private previousSelection: VillageBuildingId | null | undefined
   private previousBusy: ProviderId | null | undefined
   private nearest: VillageBuilding | null = null
   private selectedRing!: Phaser.GameObjects.Ellipse
@@ -183,8 +183,9 @@ export class WorldScene extends Phaser.Scene implements WorldController {
 
   private syncParticipants(residents: Partial<Record<ProviderId, NetworkSnapshot>>) {
     for (const building of BUILDINGS) {
-      if (building.id === 'network' || building.comingSoon) continue
-      const snapshot = residents[building.id]
+      if (building.id === 'network' || building.id === 'kova' || building.comingSoon) continue
+      const providerId = building.id
+      const snapshot = residents[providerId]
       if (snapshot === this.lastResidents[building.id]) continue
       for (const walker of this.participantWalkers.get(building.id) ?? []) { walker.sprite.destroy(); walker.shadow.destroy(); walker.label?.destroy() }
       const walkers: Walker[] = []
@@ -199,7 +200,7 @@ export class WorldScene extends Phaser.Scene implements WorldController {
         walker.sprite.removeAllListeners('pointerover').removeAllListeners('pointerout')
         walker.sprite.on('pointerover', () => walker.label?.setVisible(true))
         walker.sprite.on('pointerout', () => walker.label?.setVisible(false))
-        walker.sprite.on('pointerdown', () => { if (!inputBlocked()) this.bridge.selectResident(building.id, participant.uid) })
+        walker.sprite.on('pointerdown', () => { if (!inputBlocked()) this.bridge.selectResident(providerId, participant.uid) })
         walkers.push(walker)
       }
       this.participantWalkers.set(building.id, walkers)
