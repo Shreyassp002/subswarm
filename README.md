@@ -37,7 +37,7 @@ Search by subnet name, number or capability. Filter services, open a provider-sp
 
 Explore three connected neighborhoods, walk up to a house and start a quest. Open the Map to search destinations, inspect residents or jump straight into a service. Directional walking animations, house signs and a pixel-themed journal make discovery part of the experience.
 
-![SubSwarm pixel village with subnet houses and walkable neighborhoods](.github/assets/village.jpg)
+![Walking through the SubSwarm village with the default camera following the player](.github/assets/village.gif)
 
 | Control | Action |
 | --- | --- |
@@ -47,7 +47,7 @@ Explore three connected neighborhoods, walk up to a house and start a quest. Ope
 | Map | Search and select a district |
 | FIT | Toggle the whole-map view |
 
-Screenshots show the running interface. Provider availability and service limits can change.
+The screenshot and GIF show the running interface. Provider availability and service limits can change.
 
 ## What you can use
 
@@ -192,4 +192,4 @@ The project fits **Build with Bittensor Subnets**: it turns existing subnet capa
 
 ## Artwork and attribution
 
-The village combines original background artwork with licensed character sprites. Fonts, reused source, provider marks and artwork sources are recorded in [frontend asset notes](apps/web/README.md#assets). The README title is a static SVG with pixel lettering; screenshots come from the application itself.
+The village combines original background artwork with licensed character sprites. Fonts, reused source, provider marks and artwork sources are recorded in [frontend asset notes](apps/web/README.md#assets). The README title is a static SVG with pixel lettering; the screenshot and walking GIF come from the application itself.
