@@ -32,7 +32,7 @@ export const BUILDINGS: VillageBuilding[] = [
   { id: 'network', number: '06', name: 'Network', ability: 'CHAIN EXPLORER', color: 0x9de6d6, entrance: worldPoint(855, 516), sign: worldPoint(855, 350), bounds: worldRect(794, 367, 128, 128) },
   { id: 'chutes', number: '07', name: 'Chutes', ability: 'AI INFERENCE', color: 0xb6a0cd, entrance: worldPoint(1503, 370), sign: worldPoint(1503, 169), bounds: worldRect(1401, 185, 204, 166), comingSoon: { netuid: 64, description: 'Run open-source AI models for writing, reasoning and chat.', website: 'https://chutes.ai' } },
   { id: '404gen', number: '08', name: '404-GEN', ability: '3D CREATION', color: 0xe59577, entrance: worldPoint(1247, 517), sign: worldPoint(1247, 341), bounds: worldRect(1156, 357, 183, 141), comingSoon: { netuid: 17, description: 'Turn text and images into 3D assets for worlds, games and creative projects.', website: 'https://www.404.xyz' } },
-  { id: 'talos', number: '09', name: 'TALOS', ability: 'ROBOT TRAINING', color: 0xa6c7d3, entrance: worldPoint(1514, 590), sign: worldPoint(1514, 385), bounds: worldRect(1412, 401, 205, 170), comingSoon: { description: 'Miners use phones to record task demonstrations, collecting data used to train robots.' } },
+  { id: 'talos', number: '09', name: 'TALOS', ability: 'ROBOT TRAINING', color: 0xa6c7d3, entrance: worldPoint(1514, 590), sign: worldPoint(1514, 385), bounds: worldRect(1412, 401, 205, 170), comingSoon: { description: 'Collect demonstration data to teach robots new tasks.' } },
   { id: 'kova', number: '10', name: 'Kova', ability: '2D CAD TO 3D', color: 0xd3b88d, entrance: worldPoint(1361, 707), sign: worldPoint(1361, 535), bounds: worldRect(1268, 551, 186, 137), comingSoon: { description: 'Convert 2D CAD diagrams into 3D designs.' } },
 ]
 
