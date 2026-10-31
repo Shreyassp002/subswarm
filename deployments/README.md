@@ -1,10 +1,14 @@
-# Deployment
+# SubSwarm deployment and operations
+
+[Project overview](../README.md) · [API configuration](../services/api/README.md) · [Frontend](../apps/web/README.md)
 
 The frontend is a static Next.js export on Vercel. The API, provider jobs and
 SQLite database run as one isolated service on AWS. No Vercel Functions,
 middleware, server actions or hosted database are required.
 
 ## Current endpoints
+
+Deployment snapshot: 31 October 2026. The live provider response is authoritative for availability.
 
 - Site: https://subswarm.vercel.app
 - Backend: https://subswarm.15-135-178-84.sslip.io
@@ -23,12 +27,16 @@ different account. The local `.vercel` directory is ignored.
 The existing Vercel project is connected to
 https://github.com/Shreyassp002/subswarm with `main` as its production branch.
 Pushes to `main` publish the frontend automatically; AWS backend releases remain
-separate. Keep the Vercel GitHub app authorized for this private repository.
+separate. Keep the Vercel GitHub app authorized for this repository.
 
 The root `vercel.json` supports a source build with `NEXT_PUBLIC_API_URL=/`.
 It installs only frontend and shared workspace dependencies. Node.js is pinned
 to the same major version used for local builds.
-The initial release instead uploaded only the locally built static output:
+
+<details>
+<summary>Optional manual static-output release</summary>
+
+To upload a locally built static export instead of using the normal Git release:
 
 ```bash
 NEXT_PUBLIC_API_URL=/ npm run build --workspace @subswarm/web
@@ -43,11 +51,13 @@ Stage `apps/web/out` in an ignored release directory. Copy the existing
 Only static files and routing configuration belong in this upload. Provider
 keys, API source, SQLite files and wallet material never belong there.
 
+</details>
+
 ## AWS service
 
 The dedicated `subswarm` user runs `subswarm-api.service`, listening on
 `127.0.0.1:4500`. Caddy terminates HTTPS and forwards API requests. Add only
-the host block in `aws/Caddyfile` to the shared configuration; never replace
+the host block in [aws/Caddyfile](aws/Caddyfile) to the shared configuration; never replace
 existing host blocks. Validate the complete configuration before a graceful
 Caddy reload.
 
@@ -125,21 +135,30 @@ are omitted from the public catalogue. Historical jobs and downloads remain.
 No mainnet transactions are enabled.
 
 
-## Sponsored first request
+## Sponsored requests and limits
 
-After connecting, users click `Claim free request` to receive 1,000 rao of internal
-request credit once per verified wallet, enough for one completed SayGM or Desearch
-request at the current demo price. No on-chain TAO or network fee is needed for
-that first request. Connecting never grants credit automatically. The wallet must sign its login challenge; a supplied address alone earns nothing.
-Credits appear as `Sponsored demo credit`, separately from real deposits.
-Reconnects, new browser sessions, alternate SS58 encodings and restarts do not
-reissue the grant. Failed requests release the reservation for another attempt.
+Sponsored credit is an internal ledger allocation, not a transfer of TAO. Users
+must verify their wallet and explicitly claim it. The standard 1,000-rao grant
+covers one completed request at the current demo tariff. Claims are limited to
+20 wallets per UTC day, independently of the shared provider-attempt cap.
+Connecting never grants credit automatically.
 
-`TAO_DEMO_CREDIT_RAO=1000` and `DEMO_MAX_DAILY_WALLETS=20` enable this demo
-allocation. Zero credit disables it. At most 20 wallets are credited per UTC day;
-the separate shared provider cap remains 20 attempts per UTC day. This is a
-wallet-level demo allowance, not proof that wallets belong to distinct people.
-After the credit is spent, users may add a small prepaid test-TAO balance.
+See the [API payment guide](../services/api/README.md#testnet-payment-setup) for
+custody, receipt verification, grant idempotency and the distinction between the
+preparation script's defaults and the live demo price.
 
-Claims use authenticated `POST /v1/wallet/demo-credit` with an empty JSON body.
-Repeated claims return the current balance without issuing credit again.
+## Release checks
+
+1. Check the changed component: static frontend, Node API or environment only.
+2. Keep API keys and wallet material outside Git, release uploads and the web build.
+3. For frontend releases, confirm the intended Vercel project and `/v1/*` rewrite.
+4. For backend releases, take a consistent database backup, install native
+   dependencies on the target architecture and restart only the SubSwarm service.
+5. Confirm `/health`, then read `/v1/providers` through the frontend origin.
+   Health indicates process liveness; a provider listed as configured is not a
+   credit-balance check or proof that a paid request will succeed.
+
+Read-only release checks do not spend provider credits or test TAO. A paid
+smoke request is a separate operation and must fit the approved provider and
+wallet budgets. Never turn a deployment check into an automatic series of paid
+retries. No mainnet writes are part of this release process.
