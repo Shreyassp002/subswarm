@@ -192,4 +192,4 @@ The project fits **Build with Bittensor Subnets**: it turns existing subnet capa
 
 ## Artwork and attribution
 
-The village combines original background artwork with licensed character sprites. Fonts, reused source, provider marks and artwork sources are recorded in [Third-party notices](THIRD_PARTY_NOTICES.md). The README title is a static SVG with pixel lettering; screenshots come from the application itself.
+The village combines original background artwork with licensed character sprites. Fonts, reused source, provider marks and artwork sources are recorded in [frontend asset notes](apps/web/README.md#assets). The README title is a static SVG with pixel lettering; screenshots come from the application itself.
