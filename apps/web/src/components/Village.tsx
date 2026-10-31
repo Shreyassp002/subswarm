@@ -25,7 +25,7 @@ const names: Record<ProviderId, string> = { bitmind: "BitMind", zeus: "Zeus", di
 export default function Village() {
   const { selectedUid, walletOpen, setWalletOpen, wallet, payments, session, providers, jobs, artifacts, snapshot, chainUnavailable, selectedProvider, setSelectedProvider, directoryOpen, setDirectoryOpen, journalOpen, setJournalOpen, journalJobId, helpOpen, setHelpOpen, currentJob, connection, error, taskError, submitting, setReload, residents, refreshResidents, residentSnapshots, refreshWallet, selectProvider, selectResident, openWallet, openJournal, sendQuest, selected, selectedJob, busy } = useWorkspace();
   const [search, setSearch] = useState("");
-  const [previewHouse, setPreviewHouse] = useState<"kova" | null>(null);
+  const [previewHouse, setPreviewHouse] = useState<"kova" | "talos" | null>(null);
   useEffect(() => {
     if (!previewHouse) return;
     const close = (event: KeyboardEvent) => { if (event.key === "Escape") setPreviewHouse(null); };
@@ -35,7 +35,7 @@ export default function Village() {
   const upcoming = UPCOMING_BUILDINGS.find(building => building.id === (previewHouse ?? selectedProvider));
   function selectHouse(id: VillageBuildingId) {
     setPreviewHouse(null);
-    if (id !== "kova") { selectProvider(id); return; }
+    if (id !== "kova" && id !== "talos") { selectProvider(id); return; }
     setSelectedProvider(null);
     setDirectoryOpen(false);
     setHelpOpen(false);

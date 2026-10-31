@@ -183,7 +183,7 @@ export class WorldScene extends Phaser.Scene implements WorldController {
 
   private syncParticipants(residents: Partial<Record<ProviderId, NetworkSnapshot>>) {
     for (const building of BUILDINGS) {
-      if (building.id === 'network' || building.id === 'kova' || building.comingSoon) continue
+      if (building.id === 'network' || building.id === 'kova' || building.id === 'talos' || building.comingSoon) continue
       const providerId = building.id
       const snapshot = residents[providerId]
       if (snapshot === this.lastResidents[building.id]) continue
