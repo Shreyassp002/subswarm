@@ -4,7 +4,7 @@
 
 One static Next.js application, two ways to use subnet services: a professional workspace and a playable pixel village. Both use the same API session, wallet, request lifecycle and saved outputs.
 
-![SubSwarm workspace](../../.github/assets/workspace.jpg)
+<img src="../../.github/assets/workspace.jpg" alt="SubSwarm workspace" width="100%" />
 
 ## Pages
 

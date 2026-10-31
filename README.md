@@ -31,13 +31,13 @@ Use a conventional workspace when you want to get things done, or walk through a
 
 Search by subnet name, number or capability. Filter services, open a provider-specific form, inspect registered participants and find saved outputs in your library. Results include formatted text, source links, image assessments, weather forecasts and notes.
 
-![SubSwarm workspace with its searchable service catalogue](.github/assets/workspace.jpg)
+<img src=".github/assets/workspace.jpg" alt="SubSwarm workspace with its searchable service catalogue" width="100%" />
 
 ### The village
 
 Explore three connected neighborhoods, walk up to a house and start a quest. Open the Map to search destinations, inspect residents or jump straight into a service. Directional walking animations, house signs and a pixel-themed journal make discovery part of the experience.
 
-![Walking through the SubSwarm village with the default camera following the player](.github/assets/village.gif)
+<img src=".github/assets/village.gif" alt="Walking through the SubSwarm village with the default camera following the player" width="100%" />
 
 | Control | Action |
 | --- | --- |
